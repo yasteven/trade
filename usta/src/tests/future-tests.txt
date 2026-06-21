@@ -1,0 +1,316 @@
+future.txt:
+
+
+
+
+
+
+
+
+
+
+
+
+// ============================================================================
+// STEALTH BOT TEST STUBS - Non-Happy Path Scenarios
+// ============================================================================
+// These tests are marked with #[ignore] and serve as TDD placeholders for
+// scenarios beyond the happy path. Remove #[ignore] when implementing.
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+// LOSS EXIT SCENARIOS
+// ----------------------------------------------------------------------------
+
+#[tokio::test]
+#[ignore]
+async fn stealth_bot_exits_at_loss_floor_puts() {
+    // TODO: Test that bot exits when position hits the loss floor
+    // 
+    // Scenario:
+    // 1. Bot enters long put position at $2.00
+    // 2. Set exit_loss_pct = -80% → floor at $0.40
+    // 3. Send quotes showing put declining: $1.50 → $1.00 → $0.50 → $0.40
+    // 4. Verify bot sends SellToClose order when price hits $0.40
+    // 5. Confirm bot transitions to Crap state
+    // 6. Verify final account shows realized loss
+    panic!("Test not yet implemented - TDD stub");
+}
+
+#[tokio::test]
+#[ignore]
+async fn stealth_bot_exits_at_loss_floor_calls() {
+    // TODO: Test loss floor exit for calls
+    // 
+    // Scenario: Similar to puts but with call options
+    // 1. Bot enters long call at $2.00, floor at $0.40
+    // 2. Stock moves against position
+    // 3. Call price declines to floor
+    // 4. Verify exit at loss
+    panic!("Test not yet implemented - TDD stub");
+}
+
+#[tokio::test]
+#[ignore]
+async fn stealth_bot_early_warning_near_floor() {
+    // TODO: Test that bot logs warning when price approaches floor
+    // 
+    // Scenario:
+    // 1. Entry at $2.00, floor at $0.40
+    // 2. Price drops to $0.44 (within 2% buffer)
+    // 3. Verify bot logs "trigger checkloss: price around 2% of floor"
+    // 4. Price recovers to $0.60
+    // 5. Verify bot continues monitoring, doesn't exit yet
+    panic!("Test not yet implemented - TDD stub");
+}
+
+#[tokio::test]
+#[ignore]
+async fn stealth_bot_trailing_stop_protects_profit() {
+    // TODO: Test that trailing stop locks in gains
+    // 
+    // Scenario:
+    // 1. Entry at $2.00, target 50% gain = $3.00
+    // 2. Position moves to $2.60 (30% gain, above 25% threshold)
+    // 3. Verify floor raised to $2.30 (50% of $0.60 profit)
+    // 4. Position drops to $2.40
+    // 5. Floor should still be $2.30
+    // 6. Position drops to $2.25
+    // 7. Verify bot exits with partial profit protected
+    panic!("Test not yet implemented - TDD stub");
+}
+
+// ----------------------------------------------------------------------------
+// PARTIAL FILL SCENARIOS
+// ----------------------------------------------------------------------------
+
+#[tokio::test]
+#[ignore]
+async fn stealth_bot_handles_partial_entry_fill_timeout() {
+    // TODO: Implement from earlier TDD stub
+    // Test partial fill on BuyToOpen that lingers beyond timeout
+    // 
+    // Scenario:
+    // 1. Bot places order for 50 contracts
+    // 2. Only 25 contracts fill
+    // 3. Wait 30+ seconds with no additional fills
+    // 4. Verify bot takes action: cancel remaining or resubmit
+    // 5. Confirm bot adjusts brain.m_count to actual filled quantity
+    panic!("Test not yet implemented - TDD stub");
+}
+
+#[tokio::test]
+#[ignore]
+async fn stealth_bot_handles_partial_spread_fill_timeout() {
+    // TODO: Test partial fill on SellToOpen spread leg
+    // 
+    // Scenario:
+    // 1. Bot enters Gogo(Nice) after placing spread order
+    // 2. Spread order partially fills (e.g., 30 of 50 contracts)
+    // 3. Timeout occurs
+    // 4. Verify bot handles mismatched leg sizes appropriately
+    panic!("Test not yet implemented - TDD stub");
+}
+
+// ----------------------------------------------------------------------------
+// NICE STATE EXIT SCENARIOS
+// ----------------------------------------------------------------------------
+
+#[tokio::test]
+#[ignore]
+async fn stealth_bot_nice_exits_when_short_leg_goes_otm() {
+    // TODO: Test OTM exit condition in Nice state
+    // 
+    // Scenario:
+    // 1. Bot establishes put credit spread: long $95, short $100
+    // 2. Initially stock at $98, short put ITM by $2
+    // 3. Stock rallies to $102
+    // 4. Short put goes OTM (ITM value = 0)
+    // 5. Verify bot exits spread with SellToClose + BuyToClose
+    // 6. Confirm transition to Done state
+    panic!("Test not yet implemented - TDD stub");
+}
+
+#[tokio::test]
+#[ignore]
+async fn stealth_bot_nice_exits_at_profit_target() {
+    // TODO: Test exit when nice_exit_way = FinalPct(80.0)
+    // 
+    // Scenario:
+    // 1. Spread established, max profit = $3.00
+    // 2. Current profit reaches $2.40 (80%)
+    // 3. Verify bot exits with profit target hit message
+    panic!("Test not yet implemented - TDD stub");
+}
+
+#[tokio::test]
+#[ignore]
+async fn stealth_bot_nice_holds_to_expiry() {
+    // TODO: Test nice_exit_way = GoExpire
+    // 
+    // Scenario:
+    // 1. Spread established with GoExpire setting
+    // 2. Profit stays at 50-70% for extended period
+    // 3. Verify bot continues holding
+    // 4. Only exits if profit hits 80% or short leg goes OTM
+    panic!("Test not yet implemented - TDD stub");
+}
+
+#[tokio::test]
+#[ignore]
+async fn stealth_bot_nice_exits_within_time_window() {
+    // TODO: Test nice_exit_way = FinalDay(3, 60.0)
+    // 
+    // Scenario:
+    // 1. Spread with 10 days to expiry
+    // 2. Profit at 55% - no exit yet
+    // 3. Fast-forward to 2 days before expiry
+    // 4. Profit now 65%
+    // 5. Verify exit triggered: "within 3 days of expiry and 60% profit"
+    panic!("Test not yet implemented - TDD stub");
+}
+
+// ----------------------------------------------------------------------------
+// EDGE CASES AND ERROR CONDITIONS
+// ----------------------------------------------------------------------------
+
+#[tokio::test]
+#[ignore]
+async fn stealth_bot_handles_insufficient_cash() {
+    // TODO: Test behavior when allocation is too small
+    // 
+    // Scenario:
+    // 1. Bot allocated $500
+    // 2. Option quote: bid $4.50, ask $5.50
+    // 3. Target price $5.38, requires $538 per contract
+    // 4. Max contracts = 0 (insufficient)
+    // 5. Verify bot logs skip message and doesn't crash
+    panic!("Test not yet implemented - TDD stub");
+}
+
+#[tokio::test]
+#[ignore]
+async fn stealth_bot_handles_missing_option_in_chain() {
+    // TODO: Test when selected option index is out of bounds
+    // 
+    // Scenario:
+    // 1. Option chain has only 3 strikes
+    // 2. Bot configured with option_bucket = 2, spread_bucket = 2
+    // 3. Calculation requires index 4 (doesn't exist)
+    // 4. Verify bot logs error and transitions to Seppuku
+    panic!("Test not yet implemented - TDD stub");
+}
+
+#[tokio::test]
+#[ignore]
+async fn stealth_bot_handles_invalid_strike_ordering() {
+    // TODO: Test detection of invalid spread construction
+    // 
+    // Scenario:
+    // 1. Put spread: Bot somehow selects short strike < long strike
+    // 2. Or call spread: long strike < short strike
+    // 3. Verify bot detects error before placing order
+    // 4. Confirm Seppuku transition with clear error message
+    panic!("Test not yet implemented - TDD stub");
+}
+
+#[tokio::test]
+#[ignore]
+async fn stealth_bot_handles_no_suitable_expiration() {
+    // TODO: Test when no option chain meets min_expiry requirement
+    // 
+    // Scenario:
+    // 1. option_expire = 30 days
+    // 2. All chains expire in < 30 days
+    // 3. Verify error message and Seppuku
+    panic!("Test not yet implemented - TDD stub");
+}
+
+#[tokio::test]
+#[ignore]
+async fn stealth_bot_handles_channel_closures() {
+    // TODO: Test graceful handling of channel closures
+    // 
+    // Scenario:
+    // 1. Bot running in various states
+    // 2. told_to_trade_api channel closes unexpectedly
+    // 3. Verify bot logs error and exits cleanly
+    // 4. Test same for told_to_check_api and told_it_sucks_api
+    panic!("Test not yet implemented - TDD stub");
+}
+
+#[tokio::test]
+#[ignore]
+async fn stealth_bot_handles_sideways_market_direction() {
+    // TODO: Test rejection of Sideways market direction
+    // 
+    // Scenario:
+    // 1. Configure bot with stonk_feeling = Sideways
+    // 2. Verify bot logs error: "cannot do sideways logic"
+    // 3. Confirm Seppuku without attempting trade
+    panic!("Test not yet implemented - TDD stub");
+}
+
+// ----------------------------------------------------------------------------
+// MULTI-STAGE SCENARIOS
+// ----------------------------------------------------------------------------
+
+#[tokio::test]
+#[ignore]
+async fn stealth_bot_complete_loss_recovery_cycle() {
+    // TODO: Test bot behavior through loss, recovery, and eventual profit
+    // 
+    // Scenario:
+    // 1. Entry at $2.00, floor $0.40
+    // 2. Position drops to $0.60 (triggers checkloss)
+    // 3. Position recovers to $2.50
+    // 4. Floor raised to $2.25 (trailing stop)
+    // 5. Continue to spread establishment
+    // 6. Exit at profit
+    panic!("Test not yet implemented - TDD stub");
+}
+
+#[tokio::test]
+#[ignore]
+async fn stealth_bot_unfavorable_spread_movement() {
+    // TODO: Test spread where short leg moves unfavorably
+    // 
+    // Scenario:
+    // 1. Put credit spread established: long $95, short $100
+    // 2. Stock drops from $98 to $93
+    // 3. Short put moves deeper ITM
+    // 4. Long put also gains value
+    // 5. Verify bot holds position (both legs moving together)
+    // 6. Test exit logic when profit deteriorates
+    panic!("Test not yet implemented - TDD stub");
+}
+
+// ----------------------------------------------------------------------------
+// TIMING AND RACE CONDITIONS
+// ----------------------------------------------------------------------------
+
+#[tokio::test]
+#[ignore]
+async fn stealth_bot_handles_rapid_quote_updates() {
+    // TODO: Test bot with high-frequency quote updates
+    // 
+    // Scenario:
+    // 1. Send 100+ quote updates in quick succession
+    // 2. Verify bot doesn't miss state transitions
+    // 3. Confirm loop_log throttling works (500ms interval)
+    // 4. Check no race conditions in state changes
+    panic!("Test not yet implemented - TDD stub");
+}
+
+#[tokio::test]
+#[ignore]
+async fn stealth_bot_handles_allocation_during_order_placement() {
+    // TODO: Test race between order placement and allocation update
+    // 
+    // Scenario:
+    // 1. Bot in Make state, about to place order
+    // 2. Allocation update arrives changing cash
+    // 3. Order placed with stale cash value
+    // 4. Verify no inconsistency or panic
+    panic!("Test not yet implemented - TDD stub");
+}

@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "ttrs",
+    "usta",
+    "vsta",
+    "dsta",
+]

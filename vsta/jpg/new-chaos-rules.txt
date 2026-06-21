@@ -1,0 +1,30 @@
+the new plan is to have euro-style option chash settled index & options be all the super emeralds
+the stocks can be the chaos emeralds but they'll do those later
+
+Ticker,Type,Underlying Market,Exercise Style,Settlement,Tax Status
+
+super emeralds:
+
+VIX,Volatility,S&P 500 Volatility,European,Cash,Section 1256 (60/40)
+SPX,Full Index,S&P 500,European,Cash,Section 1256 (60/40)
+NDX,Full Index,Nasdaq 100,European,Cash,Section 1256 (60/40)
+RUT,Full Index,Russell 2000,European,Cash,Section 1256 (60/40)
+DJX,Index,Dow Jones ($1/100 value),European,Cash,Section 1256 (60/40)
+HGX,Sector,Housing,European,Cash,Section 1256 (60/40)
+SOX,Sector,Semiconductors,European,Cash,Section 1256 (60/40)
+MXEA,International,EAFE (Developed Ex-US),European,Cash,Section 1256 (60/40)
+MXEF,International,Emerging Markets,European,Cash,Section 1256 (60/40)
+XAU,Sector,Gold & Silver,European,Cash,Section 1256 (60/40)
+OSX,Sector,Oil Services,European,Cash,Section 1256 (60/40)
+
+chaos emeralds:
+
+XSP,Mini Index,S&P 500 (1/10th),European,Cash,Section 1256 (60/40)
+XND,Micro Index,Nasdaq 100 (1/100th),European,Cash,Section 1256 (60/40)
+MRUT,Mini Index,Russell 2000 (1/10th),European,Cash,Section 1256 (60/40)
+
+SPY,ETF,S&P 500,American,Shares,Standard (Short-term)
+QQQ,ETF,Nasdaq 100,American,Shares,Standard (Short-term)
+IWM,ETF,Russell 2000,American,Shares,Standard (Short-term)
+DIA,ETF,Dow Jones,American,Shares,Standard (Short-term)
+
