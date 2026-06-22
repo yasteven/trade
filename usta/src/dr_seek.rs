@@ -1,62 +1,60 @@
 //dr_seek.rs
-//use crate::*;
 
+// If we wanted to self-generate certs, but we do at build instead.
+// use rustls::pki_types::{CertificateDer, PrivateKeyDer, PrivatePkcs8KeyDer};
+// pub fn _generate_internal_crypto_identity(
+//     cert_names: &[&str],
+// ) -> Result<
+//     (
+//         Vec<CertificateDer<'static>>,
+//         PrivateKeyDer<'static>,
+//     ),
+//     Box<dyn std::error::Error>,
+// > {
+//     let names = if cert_names.is_empty() {
+//         vec!["localhost".to_string()]
+//     } else {
+//         cert_names.iter().map(|s| s.to_string()).collect()
+//     };
+//
+//     let rcgen::CertifiedKey { cert, signing_key } =
+//         rcgen::generate_simple_self_signed(names)?;
+//
+//     let tls_cert = CertificateDer::from(cert.der().to_vec());
+//
+//     let tls_key = PrivateKeyDer::Pkcs8(
+//         PrivatePkcs8KeyDer::from(signing_key.serialize_der()),
+//     );
+//
+//     Ok((vec![tls_cert], tls_key))
+// }
 
-pub fn generate_internal_crypto_identity(
-    cert_names: &[&str],
-) -> Result<
-    (
-        Vec<CertificateDer<'static>>,
-        rustls_pki_types::PrivateKeyDer<'static>,
-    ),
-    Box<dyn std::error::Error>,
-> {
-    let names = if cert_names.is_empty() {
-        vec!["localhost".to_string()]
-    } else {
-        cert_names.iter().map(|s| s.to_string()).collect()
-    };
-
-    let cert = rcgen::generate_simple_self_signed(names)?;
-    let cert_der = cert.cert.der().to_vec();
-    let private_key_der = cert.key_pair.serialize_der();
-
-    let tls_cert = CertificateDer::from(cert_der);
-    let tls_key = rustls_pki_types::PrivateKeyDer::Pkcs8(
-        rustls_pki_types::PrivatePkcs8KeyDer::from(private_key_der),
-    );
-
-    Ok((vec![tls_cert], tls_key))
-}
-
-
-
-// This is for the certs and keys for connecting to quic when we get fancy
-fn _example_server_load_certs_and_key()
--> Result
-< ( Vec<rustls::pki_types::CertificateDer<'static>>
-  , rustls::pki_types::PrivateKeyDer<'static>
-  )
-, Box<dyn std::error::Error>
->
-{
-  let cert_file = std::fs::File::open("cert.pem")?;
-  let mut cert_reader = std::io::BufReader::new(cert_file);
-  let certs: Vec<rustls::pki_types::CertificateDer<'static>>
-    = rustls_pemfile::certs(&mut cert_reader).collect::<Result<Vec<_>, _>>()?;
-  if certs.is_empty() {
-    return Err("No certificates found in cert.pem".into());
-  }
-  let key_file = std::fs::File::open("key.pem")?;
-  let mut key_reader = std::io::BufReader::new(key_file);
-  let mut keys = rustls_pemfile::pkcs8_private_keys(&mut key_reader)
-    .collect::<Result<Vec<_>, _>>()?;
-  if keys.is_empty() {
-    return Err("No private keys found in key.pem".into());
-  }
-  let key = rustls::pki_types::PrivateKeyDer::from(keys.remove(0));
-  Ok((certs, key))
-}
+ // This is for the certs and keys for connecting to quic when we get fancy
+ fn example_server_load_certs_and_key()
+ -> Result
+ < ( Vec<rustls::pki_types::CertificateDer<'static>>
+   , rustls::pki_types::PrivateKeyDer<'static>
+   )
+ , Box<dyn std::error::Error>
+ >
+ {
+   let cert_file = std::fs::File::open("cert.pem")?;
+   let mut cert_reader = std::io::BufReader::new(cert_file);
+   let certs: Vec<rustls::pki_types::CertificateDer<'static>>
+     = rustls_pemfile::certs(&mut cert_reader).collect::<Result<Vec<_>, _>>()?;
+   if certs.is_empty() {
+     return Err("No certificates found in cert.pem".into());
+   }
+   let key_file = std::fs::File::open("key.pem")?;
+   let mut key_reader = std::io::BufReader::new(key_file);
+   let mut keys = rustls_pemfile::pkcs8_private_keys(&mut key_reader)
+     .collect::<Result<Vec<_>, _>>()?;
+   if keys.is_empty() {
+     return Err("No private keys found in key.pem".into());
+   }
+   let key = rustls::pki_types::PrivateKeyDer::from(keys.remove(0));
+   Ok((certs, key))
+ }
 
 
 fn run_dr_r_generate_serverkernel() ->
