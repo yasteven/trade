@@ -19,8 +19,13 @@ fn main() {
 }
 
 fn target_profile_dir() -> PathBuf {
-    Path::new(&std::env::var("CARGO_TARGET_DIR").unwrap_or_else(|_| "target".to_string()))
-        .join(std::env::var("PROFILE").unwrap_or_else(|_| "debug".to_string()))
+    let out_dir = PathBuf::from(std::env::var("OUT_DIR").expect("OUT_DIR missing"));
+
+    out_dir
+        .ancestors()
+        .nth(3)
+        .expect("Could not derive target profile dir from OUT_DIR")
+        .to_path_buf()
 }
 
 fn write_and_copy_cert_pair(

@@ -4,4 +4,4 @@ podman run --rm -it \
   alpine-rust-builder:latest \
   cargo build --release --manifest-path /home/seev0/etc/trade/Cargo.toml -p usta
 
-scp {bin/alpine_usta/release/*.pem,bin/alpine_usta/release/usta} root@192.168.122.239:/var/trade/usta
+scp bin/alpine_usta/release/cert.pem bin/alpine_usta/release/key.pem bin/alpine_usta/release/usta root@192.168.122.239:/var/trade/usta
