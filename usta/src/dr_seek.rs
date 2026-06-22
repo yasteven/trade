@@ -2,13 +2,43 @@
 //use crate::*;
 
 
-fn example_server_load_certs_and_key()
+pub fn generate_internal_crypto_identity(
+    cert_names: &[&str],
+) -> Result<
+    (
+        Vec<CertificateDer<'static>>,
+        rustls_pki_types::PrivateKeyDer<'static>,
+    ),
+    Box<dyn std::error::Error>,
+> {
+    let names = if cert_names.is_empty() {
+        vec!["localhost".to_string()]
+    } else {
+        cert_names.iter().map(|s| s.to_string()).collect()
+    };
+
+    let cert = rcgen::generate_simple_self_signed(names)?;
+    let cert_der = cert.cert.der().to_vec();
+    let private_key_der = cert.key_pair.serialize_der();
+
+    let tls_cert = CertificateDer::from(cert_der);
+    let tls_key = rustls_pki_types::PrivateKeyDer::Pkcs8(
+        rustls_pki_types::PrivatePkcs8KeyDer::from(private_key_der),
+    );
+
+    Ok((vec![tls_cert], tls_key))
+}
+
+
+
+// This is for the certs and keys for connecting to quic when we get fancy
+fn _example_server_load_certs_and_key()
 -> Result
 < ( Vec<rustls::pki_types::CertificateDer<'static>>
   , rustls::pki_types::PrivateKeyDer<'static>
   )
 , Box<dyn std::error::Error>
-> 
+>
 {
   let cert_file = std::fs::File::open("cert.pem")?;
   let mut cert_reader = std::io::BufReader::new(cert_file);
@@ -35,29 +65,32 @@ Result
   , tokio::sync::mpsc::Receiver<dsta::ksta::ConnectionHandle>
   )
 , Box<dyn std::error::Error>
-> // This function generates the seek server kernel 
+> // This function generates the seek server kernel
 { let dbgspt = format!("[RDRGSK] :");
 
   let (new_connection_sender, new_connection_receiver) = tokio::sync::mpsc::channel(256);
   log::debug!("\n  [ENTRY] {} run_dr_r_generate_serverkernel Creating server kernel...",dbgspt);
-  match rustls::crypto::CryptoProvider::install_default(rustls::crypto::ring::default_provider()) 
-  { Err(_) => 
+  match rustls::crypto::CryptoProvider::install_default(rustls::crypto::ring::default_provider())
+  { Err(_) =>
     { log::debug!("{} rustls::crypto::CryptoProvider::install_default Result NOT infalliable i guess",dbgspt);
     }
     ,
-    _ => 
+    _ =>
     { log::debug!("{} rustls::crypto::CryptoProvider::install_default Result infalliable i guess",dbgspt);
     }
   };
   log::debug!("{} calling Load certificates and key...",dbgspt);
-  let (certs, key) = match example_server_load_certs_and_key()
+  let (certs, key) =
+    match
+      //_generate_internal_crypto_identity(cert_names);
+      example_server_load_certs_and_key()
   { Ok(ok) => ok
   , Err(e) =>
     { log::error!("{} Could not load certs and keys: {:#?}", dbgspt, e);
       return Err(e);
     }
   };
-  
+
   log::debug!("{} Creating server configuration...",dbgspt);
   let mut server_config = quinn::ServerConfig::with_single_cert(certs, key)?;
   let mut transport_config = quinn::TransportConfig::default();
@@ -105,21 +138,21 @@ pub(crate) fn fn_make_hand_foot() -> (Hand,Foot)
     {   tx_talk_snively   : a0
       , tx_talk_made_bot   : a1
       , tx_talk_got_ttai   : a3
-      , tx_talk_got_tick00 : a4 
-      , tx_talk_got_tick01 : a5 
+      , tx_talk_got_tick00 : a4
+      , tx_talk_got_tick01 : a5
     }
   , Foot
     {   rx_talk_snively   : b0
       , rx_talk_made_bot   : b1
       , rx_talk_got_ttai   : b3
-      , rx_talk_got_tick00 : b4 
-      , rx_talk_got_tick01 : b5 
+      , rx_talk_got_tick00 : b4
+      , rx_talk_got_tick01 : b5
     }
   )
 }
 
 fn pre_prevent_reserved_names(who : &str) -> bool
-{ who.starts_with("USER_") 
+{ who.starts_with("USER_")
   || who.starts_with("DEAD_")
   || who.starts_with("0")
   || who.starts_with("`")
@@ -128,7 +161,7 @@ fn pre_prevent_reserved_names(who : &str) -> bool
 }
 
 async fn fn_run_sniv
-( sniv : dsta::Snively 
+( sniv : dsta::Snively
 , txsn : tokio::sync::mpsc::Sender<dsta::Snively>
 , tell_dr_new_robot : &tokio::sync::mpsc::Sender<crate::CtorBot>
 , tell_dr_a_snively : &tokio::sync::mpsc::Sender<(usize, dsta::Snively)>
@@ -136,11 +169,11 @@ async fn fn_run_sniv
 { let dbgspt = format!("DRS_FRS");
   log::debug!("ENTRY! - dr_seek::fn_run_sniv = {}", dbgspt);
   match sniv
-  { 
+  {
     //--------------------------
     // bot construction managment
     //--------------------------
-    dsta::Snively::MakeBotBuzz(s) => // (s:MakeBuzzBomber)                                   
+    dsta::Snively::MakeBotBuzz(s) => // (s:MakeBuzzBomber)
     { log::info!("{} dr_seek got a snively::MakeBotBuzz = {:#?} ", dbgspt,s);
       if pre_prevent_reserved_names(&s.my_accounting.friendly_name)
       { log::error!("TODO: alert the frontend they can't use names that start with USER_...,DEAD_...,0...");
@@ -149,8 +182,8 @@ async fn fn_run_sniv
       { let _lazy = tell_dr_a_snively.send((1,dsta::Snively::MakeBotBuzz(s))).await;
       }
     }
-    , 
-    dsta::Snively::MakeStealth(s) => // (s:MakeStealthbot)                                   
+    ,
+    dsta::Snively::MakeStealth(s) => // (s:MakeStealthbot)
     { log::info!("{} dr_seek got a snively::MakeBotBuzz = {:#?} ", dbgspt,s);
       if pre_prevent_reserved_names(&s.my_accounting.friendly_name)
       { log::error!("TODO: alert the frontend they can't use names that start with USER_...,DEAD_...,0...");
@@ -179,11 +212,11 @@ async fn fn_run_sniv
     //--------------------------
     // NOTE: bot expansions go here
     //--------------------------
-    , 
+    ,
     //--------------------------
     // Regular bot manamenet
     //--------------------------
-    dsta::Snively::LiveBotName(s) => // (String) // Turns on a bot for processing        
+    dsta::Snively::LiveBotName(s) => // (String) // Turns on a bot for processing
     { log::info!("{} dr_seek got a snively::LiveBotName = {:#?} ", dbgspt,s);
       let _lazy = tell_dr_a_snively.send((1,dsta::Snively::LiveBotName(s))).await;
     }
@@ -193,16 +226,16 @@ async fn fn_run_sniv
       let _lazy = tell_dr_a_snively.send((1,dsta::Snively::KillBotName(s))).await;
     }
     ,
-    dsta::Snively::StopBotName(s) => // (String) // Pauses an live processing bot          
+    dsta::Snively::StopBotName(s) => // (String) // Pauses an live processing bot
     { log::info!("{} dr_seek got a snively::StopBotName = {:#?} ", dbgspt,s);
       let _lazy = tell_dr_a_snively.send((1,dsta::Snively::StopBotName(s))).await;
     }
     ,
-    dsta::Snively::SendLogNote(s) => // (String) // Just for tesing right now              
+    dsta::Snively::SendLogNote(s) => // (String) // Just for tesing right now
     { log::info!("{} dr_seek got a snively::SendLogNote = {:#?} ", dbgspt,s);
       let _lazy = tell_dr_a_snively.send((1,dsta::Snively::SendLogNote(s))).await;
-    }  
-    , 
+    }
+    ,
     //--------------------------
     // Frontend Updates
     //--------------------------
@@ -211,7 +244,7 @@ async fn fn_run_sniv
       let _lazy = tell_dr_a_snively.send((1,dsta::Snively::EmeraldInfo(s))).await;
       let _lazy = tell_dr_a_snively.send((1,dsta::Snively::SendLogNote(format!("Emerald Get!")))).await;
     }
-    , 
+    ,
     //--------------------------
     // Advanced requests
     //--------------------------
@@ -225,8 +258,8 @@ async fn fn_run_sniv
     // KillBotName(String),
     // StopBotName(String),
     // SendLogNote(String), // For 2 - way comms
-    
-    dsta::Snively::UserDemands(s) => // (AttemptDemands)) // Just for tesing right now              
+
+    dsta::Snively::UserDemands(s) => // (AttemptDemands)) // Just for tesing right now
     { log::info!("{} dr_seek got a snively::UserDemands = {:#?} ", dbgspt,s);
       let _lazy = tell_dr_a_snively.send((1,dsta::Snively::UserDemands(s))).await;
     }
@@ -236,12 +269,12 @@ async fn fn_run_sniv
   Ok(())
 }
 
-pub(crate) async fn f_run_main_dr_seek // run_dr_robotnik_talk_seek // boot 
+pub(crate) async fn f_run_main_dr_seek // run_dr_robotnik_talk_seek // boot
 ( mut output_talk : Foot
 , tell_dr_new_robot : tokio::sync::mpsc::Sender<crate::CtorBot>
 , tell_dr_a_snively : tokio::sync::mpsc::Sender<(usize, dsta::Snively)>
 ) -> () // Result<(), Box<dyn std::error::Error>>
-{ let (mut server_kernel, mut new_connection_receiver) 
+{ let (mut server_kernel, mut new_connection_receiver)
   = match run_dr_r_generate_serverkernel()
   { Ok(res) => res
     , _ =>
@@ -249,19 +282,19 @@ pub(crate) async fn f_run_main_dr_seek // run_dr_robotnik_talk_seek // boot
       return ();
     }
   };
-    
+
   log::info!
   ( "ENTRY: run_dr_robotnik_talk_seek() [RDRTS]; WHAT THIS DOES = {}"
     , r#"
         The point of run_dr_robotnik_talk_seek is to create X tasks:
         1) server kernel run => gets connections from the frontends.
         2) outgoing message sender (gets messages here, sends to 3+)
-        3+?) task for each connected connection for rx/tx - 
+        3+?) task for each connected connection for rx/tx -
         0) Last tasks are spawned in a while loop means this function runs indefinitly
         -1) if 0 fails, All of the above tasks are stopped.
-      
-        It takes in the seek! kernel and seek! receiver for comms, 
-        and the receivers (Foot) for data that needs to be sent 
+
+        It takes in the seek! kernel and seek! receiver for comms,
+        and the receivers (Foot) for data that needs to be sent
         out over the comms
       "#
   );
@@ -272,24 +305,24 @@ pub(crate) async fn f_run_main_dr_seek // run_dr_robotnik_talk_seek // boot
   log::debug!("[RDRTS] -> spawn first task T1 (seek server kernel run)...");
   let broadcast_tx_t1 = broadcast_tx.clone();
   tokio::spawn
-  ( async move 
+  ( async move
     { log::debug!("[RDRTS][T1] Spawning the server kernel's run method in a separate task...");
-      let (cancel_run_tx, cancel_run_rx) 
-        = tokio::sync::mpsc::channel::<()>(2); 
+      let (cancel_run_tx, cancel_run_rx)
+        = tokio::sync::mpsc::channel::<()>(2);
       struct CancelGuard(tokio::sync::mpsc::Sender<()>);
-      impl Drop for CancelGuard 
-      { fn drop(&mut self) 
+      impl Drop for CancelGuard
+      { fn drop(&mut self)
         { let _ = futures::executor::block_on(self.0.send(()));
         }
       }
 
-      let mut bt1 = broadcast_tx_t1.subscribe(); 
+      let mut bt1 = broadcast_tx_t1.subscribe();
       let _guard = CancelGuard(cancel_run_tx);
       tokio::select!
-      { res = server_kernel.run(cancel_run_rx) => 
+      { res = server_kernel.run(cancel_run_rx) =>
         { log::debug!("[RDRTS][T1] res = server_kernel.run(cancel_run_rx) => FINISHED");
           match res
-          { Ok(_) => 
+          { Ok(_) =>
             { log::error!("[RDRTS][T1] ServerKernel run ended unexpectedly l_l...");
             }
             Err(e) =>
@@ -297,10 +330,10 @@ pub(crate) async fn f_run_main_dr_seek // run_dr_robotnik_talk_seek // boot
             }
           }
         }
-        // _ = tokio::signal::ctrl_c() => 
+        // _ = tokio::signal::ctrl_c() =>
         // { log::info!("[RDRTS][T1] selected ctrl-c over server_kernel.run()!");
         // }
-        res = bt1.recv() => 
+        res = bt1.recv() =>
         { match res
           { Ok(ok) =>
             { log::info!("[RDRTS][T1] received broadcast shutdown signal: {:#?}", ok);
@@ -316,36 +349,36 @@ pub(crate) async fn f_run_main_dr_seek // run_dr_robotnik_talk_seek // boot
     }
   );
 
-  // NOTE: T2 processes all outgoing message types (Snively, MadeBot, etc.) in a single tokio::select! loop, 
-  // which could become unwieldy if more message types are added. 
-  // Consider splitting T2 into separate tasks per message type for better 
+  // NOTE: T2 processes all outgoing message types (Snively, MadeBot, etc.) in a single tokio::select! loop,
+  // which could become unwieldy if more message types are added.
+  // Consider splitting T2 into separate tasks per message type for better
   // scalability.
   log::debug!("[RDRTS] -> spawn next task T2 (outgoing seek sender)...");
   let (tx_handout, mut rx_handout) = tokio::sync::mpsc::channel::<Hand>(100);
   let broadcast_tx_t2 = broadcast_tx.clone();
   tokio::spawn
-  ( async move 
+  ( async move
     { log::debug!("[RDRTS][T2] Spawning the collector");
       let mut viewers: Vec<Option<Hand>> = Vec::new();
-      
+
       async fn process_talk<T: Clone + Send + Sync + std::fmt::Debug + 'static>
       (   viewers: &mut Vec<Option<Hand>>
         , msg: T
         , field_name: &str
         , tx_lambda: fn(&Hand) -> &tokio::sync::mpsc::Sender<T>
-      ) 
+      )
       { slog::trace!
         ( crate::glossary::TICK_SLOG,
           "[RDRTS][T2] collector processing own talk"
         );
         let mut failed_indices = Vec::new();
-        for (idx, viewer) in viewers.iter().enumerate() 
-        { if let Some(hand) = viewer 
-          { if let Err(e) = ( tx_lambda(hand) ).send( msg.clone() ).await 
+        for (idx, viewer) in viewers.iter().enumerate()
+        { if let Some(hand) = viewer
+          { if let Err(e) = ( tx_lambda(hand) ).send( msg.clone() ).await
             { log::error!("[RDRTS][T2] Failed to send {} to viewer {}: {:#?}", field_name, idx, e);
               failed_indices.push(idx);
-            } 
-            else 
+            }
+            else
             { slog::debug!
               ( crate::glossary::TICK_SLOG
               , "[RDRTS][T2] Sent {} to viewer {} = {:#?}", field_name, idx, msg
@@ -365,12 +398,12 @@ pub(crate) async fn f_run_main_dr_seek // run_dr_robotnik_talk_seek // boot
 
       let mut bt2 = broadcast_tx_t2.subscribe();
 
-      loop 
-      { tokio::select! 
+      loop
+      { tokio::select!
         { res = rx_handout.recv() =>
           { match res
             { Some(hand) =>
-              { while !viewers.is_empty() && viewers.last().is_none() // == Some(&None) 
+              { while !viewers.is_empty() && viewers.last().is_none() // == Some(&None)
                 { viewers.pop();
                   log::debug!("[RDRTS][T2] Popped None viewer from back before adding new Hand");
                 }
@@ -416,7 +449,7 @@ pub(crate) async fn f_run_main_dr_seek // run_dr_robotnik_talk_seek // boot
               }
             }
           }
-          
+
           res = output_talk.rx_talk_got_ttai.recv() =>
           { match res
             { Some(talk) =>
@@ -450,12 +483,12 @@ pub(crate) async fn f_run_main_dr_seek // run_dr_robotnik_talk_seek // boot
               }
             }
           }
-          _ = bt2.recv() => 
+          _ = bt2.recv() =>
           { log::info!("[RDRTS][T2] received broadcast shutdown signal");
             break;
           }
         }
-      } 
+      }
 
       log::error!("[RDRTS][T2] BROADCASTING EXIT: task T2");
       let _ = broadcast_tx_t2.send(());
@@ -468,17 +501,17 @@ pub(crate) async fn f_run_main_dr_seek // run_dr_robotnik_talk_seek // boot
   // we should do this infinitely...
   let mut cancel_txs : Vec<tokio::sync::watch::Sender<dsta::ksta::CancelInfo>> = Vec::new();
   let mut connection_count = 0;
-  
+
 
   log::info!("[RDRTS] alerting dr_robo of completed startup");
   let _ = tell_dr_a_snively.send
   ( ( 1, dsta::Snively::SendLogNote(format!("dssu")) )
   ).await;
 
-  loop 
-  { tokio::select! 
+  loop
+  { tokio::select!
     {
-      _ = broadcast_rx.recv() => 
+      _ = broadcast_rx.recv() =>
       {
         log::error!("[RDRTS] received broadcast shutdown signal, exiting connection loop");
         for cancel_tx in cancel_txs
@@ -487,14 +520,14 @@ pub(crate) async fn f_run_main_dr_seek // run_dr_robotnik_talk_seek // boot
             { cancel : true
             , reason : format!("[RDRTS] Starting loop to handle the MPSC messages of new connections received broadcast shutdown signal, sending to all connections")
             , connection_number : 0
-            } 
+            }
           );
         }
         break;
       }
-      res = new_connection_receiver.recv() => 
+      res = new_connection_receiver.recv() =>
       { let mut handle = match res
-        { Some(hand) => 
+        { Some(hand) =>
           { hand
           }
           None =>
@@ -507,7 +540,7 @@ pub(crate) async fn f_run_main_dr_seek // run_dr_robotnik_talk_seek // boot
         connection_count += 1;
         log::info!
         ( "[RDRTS] Received new connection [{}]: C_ID {}, Remote: {}\n{}"
-          , connection_count 
+          , connection_count
           , handle.c_id
           , handle.remote_addr
           , " For example, Going to Spawn a task to handle each of this connection's channels"
@@ -515,14 +548,14 @@ pub(crate) async fn f_run_main_dr_seek // run_dr_robotnik_talk_seek // boot
         let cancel_tx = handle.cancel_conn_tasks_sender.clone();
         cancel_txs.push(cancel_tx);
         let mut cancel_rx = handle.cancel_conn_tasks_receiver.clone();
-        
+
         let c_tx_sniv = handle.to_dude_snively.clone();
         let c_tx_made = handle.to_dude_madebot.clone();
         let c_tx_ttai = handle.to_dude_gotttai.clone();
         let c_tx_tik0 = handle.to_dude_gottick00.clone();
         let c_tx_tik1 = handle.to_dude_gottick01.clone();
-        
-        let hand = Hand 
+
+        let hand = Hand
         {   tx_talk_snively: c_tx_sniv
           , tx_talk_made_bot: c_tx_made
           , tx_talk_got_ttai: c_tx_ttai
@@ -564,14 +597,14 @@ pub(crate) async fn f_run_main_dr_seek // run_dr_robotnik_talk_seek // boot
                     }
                   }
                 }
-                _ = cancel_rx.changed() => 
+                _ = cancel_rx.changed() =>
                 { let info = cancel_rx.borrow();
-                  if info.cancel 
+                  if info.cancel
                   { log::debug!("[RDRTS][T3.{}] Comms Snively rx sees cancelation signal: {:#?}", handle.c_id, info);
                     break;
                   }
                 }
-                _ = bt3.recv() => 
+                _ = bt3.recv() =>
                 { log::info!("[RDRTS][T3.{}] received broadcast shutdown signal", handle.c_id);
                   break;
                 }

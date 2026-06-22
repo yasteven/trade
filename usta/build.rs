@@ -3,6 +3,8 @@ use rcgen::{CertificateParams, KeyPair, DnType, SanType};
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
+// usta/build.rs
+
 
 /// Generates self-signed certs/keys **without SANs** (for simple LAN testing).
 /// Use this if:
@@ -90,11 +92,6 @@ fn _generate_certs_with_sans_and_copy_to_binary_dir() {
     fs::copy(&key_path, target_dir.join("key_with_sans.pem")).expect("Failed to copy key_with_sans.pem");
 }
 
-// usta/build.rs
-use rcgen::{CertificateParams, KeyPair, DnType};
-use std::fs::{self, File};
-use std::io::Write;
-use std::path::Path;
 
 fn main() {
     // Get the target directory (e.g., /home/seev0/etc/trade/bin/alpine_usta/release)
