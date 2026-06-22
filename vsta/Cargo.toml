@@ -19,8 +19,9 @@ tokio-stream= { version = "0.1", features = ["sync"] }
 
 # STEVEN EDWARD ELLIOTT MACROS AND LIBRARIES
 slog = {path = "../../slog"}
-seem = {path = "../../seem"} # seem::seek! 
-seel = {path = "../../seel"}
+# seem = {path = "../../seem"} # seem::seek! 
+# seel = {path = "../../seel"}
+seek = { package = "see-k", version = "0.1" }
 
 # DEBUG AND LOGGING
 pretty-hex = "0.4.1"
