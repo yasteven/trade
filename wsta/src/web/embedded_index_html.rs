@@ -1,7 +1,7 @@
 // trade/wsta/src/web/embedded_index_html.rs
 //
 // Browser shell for the vsta replacement.
-// Dr. Robotnik is the first rebuilt control surface.
+// Dr. Robotnik make-bot parity pass.
 //
 // Layout:
 //   global left    = app nav image buttons
@@ -9,8 +9,8 @@
 //   bottom         = debug/info output
 //
 // Dr. Robotnik selected:
-//   inner left     = thin bot-maker options
-//   inner right    = selected form/display
+//   inner left     = image buttons for Overview / Make Buzz / Make Stealth / Make Sally / Make Swat / TTAI
+//   inner right    = full constructor form display
 //
 // No video pane.
 // No HTTP control fallback.
@@ -35,13 +35,32 @@ pub const INDEX_HTML: &str = r#"<!doctype html>
         <span>Dr. Robotnik</span>
       </button>
 
-      <button class="navButton" data-view="Buzz">Buzz</button>
-      <button class="navButton" data-view="Stealth">Stealth</button>
-      <button class="navButton" data-view="Sally">Sally</button>
-      <button class="navButton" data-view="Swat">Swat</button>
+      <button class="navButton imageButton" data-view="Buzz">
+        <img src="/assets/images/buzz_button.jpg" alt="Buzz">
+        <span>Buzz</span>
+      </button>
+
+      <button class="navButton imageButton" data-view="Stealth">
+        <img src="/assets/images/stealth_button.jpg" alt="Stealth">
+        <span>Stealth</span>
+      </button>
+
+      <button class="navButton imageButton" data-view="Sally">
+        <img src="/assets/images/sally_button.jpg" alt="Sally">
+        <span>Sally</span>
+      </button>
+
+      <button class="navButton imageButton" data-view="Swat">
+        <img src="/assets/images/swat_button.jpg" alt="Swat">
+        <span>Swat</span>
+      </button>
+
       <button class="navButton" data-view="Ttai">TTAI</button>
       <button class="navButton" data-view="Nico">Nico</button>
-      <button class="navButton" data-view="Logs">Logs</button>
+      <button class="navButton imageButton" data-view="Logs">
+        <img src="/assets/images/logs_button.jpg" alt="Logs">
+        <span>Logs</span>
+      </button>
 
       <div class="navFooter">
         <div id="transportBadge" class="badge bad">WT disconnected</div>
@@ -66,12 +85,35 @@ pub const INDEX_HTML: &str = r#"<!doctype html>
   <template id="drRobotnikTemplate">
     <div id="drRobotnikSurface">
       <nav id="drRobotnikTools">
-        <button class="drTool selected" data-dr-tool="Overview">Overview</button>
-        <button class="drTool" data-dr-tool="MakeBuzz">Make Buzz</button>
-        <button class="drTool" data-dr-tool="MakeStealth">Make Stealth</button>
-        <button class="drTool" data-dr-tool="MakeSally">Make Sally</button>
-        <button class="drTool" data-dr-tool="MakeSwat">Make Swat</button>
-        <button class="drTool" data-dr-tool="TtaiOverview">TTAI Overview</button>
+        <button class="drTool imageTool selected" data-dr-tool="Overview">
+          <img src="/assets/images/dr_robo_button.jpg" alt="Overview">
+          <span>Overview</span>
+        </button>
+
+        <button class="drTool imageTool" data-dr-tool="MakeBuzz">
+          <img src="/assets/images/buzz_button.jpg" alt="Make Buzz">
+          <span>Make Buzz</span>
+        </button>
+
+        <button class="drTool imageTool" data-dr-tool="MakeStealth">
+          <img src="/assets/images/stealth_button.jpg" alt="Make Stealth">
+          <span>Make Stealth</span>
+        </button>
+
+        <button class="drTool imageTool" data-dr-tool="MakeSally">
+          <img src="/assets/images/sally_button.jpg" alt="Make Sally">
+          <span>Make Sally</span>
+        </button>
+
+        <button class="drTool imageTool" data-dr-tool="MakeSwat">
+          <img src="/assets/images/swat_button.jpg" alt="Make Swat">
+          <span>Make Swat</span>
+        </button>
+
+        <button class="drTool imageTool" data-dr-tool="TtaiOverview">
+          <img src="/assets/images/logs_button.jpg" alt="TTAI">
+          <span>TTAI</span>
+        </button>
       </nav>
 
       <section id="drRobotnikDisplay"></section>
@@ -167,17 +209,17 @@ button {
 }
 
 .navButton.imageButton {
-  min-height: 82px;
+  min-height: 74px;
   padding: 8px;
   display: grid;
-  grid-template-columns: 58px minmax(0, 1fr);
+  grid-template-columns: 52px minmax(0, 1fr);
   align-items: center;
   gap: 10px;
 }
 
 .navButton.imageButton img {
-  width: 58px;
-  height: 58px;
+  width: 52px;
+  height: 52px;
   object-fit: contain;
   border-radius: 8px;
   border: 1px solid rgba(112, 214, 255, 0.24);
@@ -245,7 +287,7 @@ button {
   width: 100%;
   height: 100%;
   display: grid;
-  grid-template-columns: 138px minmax(0, 1fr);
+  grid-template-columns: 130px minmax(0, 1fr);
   gap: 14px;
   box-sizing: border-box;
   padding: 14px;
@@ -261,6 +303,7 @@ button {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  overflow: auto;
 }
 
 .drTool {
@@ -268,6 +311,30 @@ button {
   padding: 6px 8px;
   text-align: left;
   font-size: 12px;
+}
+
+.drTool.imageTool {
+  min-height: 92px;
+  display: grid;
+  grid-template-rows: 58px auto;
+  place-items: center;
+  text-align: center;
+  gap: 5px;
+  padding: 7px;
+}
+
+.drTool.imageTool img {
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+  border-radius: 8px;
+  border: 1px solid rgba(112, 214, 255, 0.24);
+  background: rgba(2, 4, 10, 0.72);
+}
+
+.drTool.imageTool span {
+  font-size: 11px;
+  line-height: 1.1;
 }
 
 #drRobotnikDisplay {
@@ -278,20 +345,28 @@ button {
 
 .panelGrid {
   display: grid;
-  grid-template-columns: minmax(340px, 520px) minmax(0, 1fr);
+  grid-template-columns: minmax(420px, 620px) minmax(0, 1fr);
   gap: 14px;
   align-items: start;
 }
 
-.panel {
+.panel,
+.formSection {
   border: 1px solid var(--line);
   border-radius: 12px;
   background: rgba(7, 16, 31, 0.80);
   padding: 14px;
 }
 
+.formStack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .panel h2,
-.panel h3 {
+.panel h3,
+.formSection h3 {
   margin-top: 0;
   color: var(--hot);
 }
@@ -322,7 +397,7 @@ button {
 
 .formGrid {
   display: grid;
-  grid-template-columns: 170px minmax(0, 1fr);
+  grid-template-columns: 190px minmax(0, 1fr);
   gap: 8px 10px;
   align-items: center;
 }
@@ -472,37 +547,120 @@ pub const WSTA_JS: &str = r#"
       .replaceAll('"', "&quot;");
   }
 
-  function formValue(id) {
+  function value(id) {
     return document.getElementById(id).value;
   }
 
-  function formNumber(id) {
-    const x = Number(formValue(id));
+  function numberValue(id) {
+    const x = Number(value(id));
     return Number.isFinite(x) ? x : 0;
   }
 
-  function formChecked(id) {
+  function intValue(id) {
+    const x = parseInt(value(id), 10);
+    return Number.isFinite(x) ? x : 0;
+  }
+
+  function checked(id) {
     return document.getElementById(id).checked;
   }
 
-  function commonForm(prefix, name, ticker) {
-    return html`
-      <label>Friendly name</label>
-      <input id="${prefix}_friendlyName" value="${escapeHtml(name)}">
+  function commonPayload(prefix) {
+    return {
+      friendly_name: value(`${prefix}_friendlyName`),
+      tracking_tick: value(`${prefix}_trackingTick`),
+      max_cash_risk_use_max: checked(`${prefix}_maxRiskUseMax`),
+      max_cash_risk_percent: numberValue(`${prefix}_maxRiskPct`),
+      max_cash_risk_dollar: numberValue(`${prefix}_maxRiskDollar`),
+    };
+  }
 
-      <label>Tracking ticker</label>
-      <input id="${prefix}_trackingTick" value="${escapeHtml(ticker)}">
+  function commonForm(prefix, friendly, ticker) {
+    return html`
+      <div class="formSection">
+        <h3>Common Bot Info</h3>
+        <div class="formGrid">
+          <label>Friendly name</label>
+          <input id="${prefix}_friendlyName" value="${escapeHtml(friendly)}">
+
+          <label>Tracking ticker</label>
+          <input id="${prefix}_trackingTick" value="${escapeHtml(ticker)}">
+
+          <label>Max cash risk uses max</label>
+          <div class="checkLine">
+            <input id="${prefix}_maxRiskUseMax" type="checkbox">
+            <span>true = choose max, false = choose min</span>
+          </div>
+
+          <label>Max cash risk %</label>
+          <input id="${prefix}_maxRiskPct" value="0">
+
+          <label>Max cash risk $</label>
+          <input id="${prefix}_maxRiskDollar" value="0">
+        </div>
+      </div>
     `;
   }
 
   function marketDirectionSelect(id) {
     return html`
       <select id="${id}">
-        <option value="GetStonk">GetStonk</option>
-        <option value="Sideways">Sideways</option>
-        <option value="Corrects">Corrects</option>
+        <option value="GetStonk">GetStonk / Bull</option>
+        <option value="Sideways">Sideways / Lull</option>
+        <option value="Corrects">Corrects / Bear</option>
       </select>
     `;
+  }
+
+  function marketTimeSelect(id) {
+    return html`
+      <select id="${id}">
+        <option value="PowerEnds">PowerEnds / 3:50 pm</option>
+        <option value="ItsClosed">ItsClosed / 3:59:59 pm</option>
+        <option value="Hurry5sec">Hurry5sec / 3:59:55 pm</option>
+        <option value="TminusTen">TminusTen / 3:59:50 pm</option>
+        <option value="Tminus30s">Tminus30s / 3:59:30 pm</option>
+        <option value="Tminus60s">Tminus60s / 3:59:00 pm</option>
+        <option value="DeadShort">DeadShort / 3:45 pm</option>
+        <option value="PowerFive">PowerFive / 3:55 pm</option>
+        <option value="PowerEasy">PowerEasy / 3:30 pm</option>
+        <option value="PowerHour">PowerHour / 3:00 pm</option>
+        <option value="FedSpeach">FedSpeach / 2:30 pm</option>
+        <option value="FedMinute">FedMinute / 2:00 pm</option>
+        <option value="TradeTime">TradeTime / 1:00 pm</option>
+        <option value="LunchTime">LunchTime / 12:00 pm</option>
+        <option value="EuroClose">EuroClose / 10:30 am</option>
+        <option value="DoneTrend">DoneTrend / 10:00 am</option>
+        <option value="OpenChaos">OpenChaos / 9:30 am</option>
+        <option value="ResetTtai">ResetTtai / 5:20 pm</option>
+      </select>
+    `;
+  }
+
+  function actionTimeForm(prefix, title) {
+    return html`
+      <div class="formSection">
+        <h3>${escapeHtml(title)}</h3>
+        <div class="formGrid">
+          <label>Relative days</label>
+          <input id="${prefix}_relativeDays" value="0">
+
+          <label>Market time</label>
+          ${marketTimeSelect(`${prefix}_marketTime`)}
+
+          <label>Wait seconds</label>
+          <input id="${prefix}_waitSeconds" value="0">
+        </div>
+      </div>
+    `;
+  }
+
+  function actionTimePayload(prefix) {
+    return {
+      relative_days: intValue(`${prefix}_relativeDays`),
+      market_time: value(`${prefix}_marketTime`),
+      wait_seconds: intValue(`${prefix}_waitSeconds`),
+    };
   }
 
   function renderDrRobotnikSurface() {
@@ -550,6 +708,7 @@ pub const WSTA_JS: &str = r#"
 
       case "TtaiOverview":
         display.innerHTML = renderTtaiOverview();
+        wireTtaiOverview();
         break;
 
       case "Overview":
@@ -565,25 +724,13 @@ pub const WSTA_JS: &str = r#"
         <div class="panel">
           <h2>Dr. Robotnik overview</h2>
           <p>This is the web rebuild of the old Iced <code>DrRobotnikV</code> hub.</p>
-          <p>The thin column selects bot-maker tools. The display column renders the selected control.</p>
+          <p>The image column selects bot-maker tools. The display column renders the selected constructor.</p>
 
           <div class="infoCards">
-            <div class="infoCard">
-              <div class="label">connection</div>
-              <div class="value">${writer ? "WebTransport ready" : "WebTransport not ready"}</div>
-            </div>
-            <div class="infoCard">
-              <div class="label">made bots</div>
-              <div class="value">${backendState.madeBots.length}</div>
-            </div>
-            <div class="infoCard">
-              <div class="label">sent orders</div>
-              <div class="value">${backendState.sentOrders.length}</div>
-            </div>
-            <div class="infoCard">
-              <div class="label">push tickers</div>
-              <div class="value">${Object.keys(backendState.pushTickers).length}</div>
-            </div>
+            <div class="infoCard"><div class="label">connection</div><div class="value">${writer ? "WebTransport ready" : "WebTransport not ready"}</div></div>
+            <div class="infoCard"><div class="label">made bots</div><div class="value">${backendState.madeBots.length}</div></div>
+            <div class="infoCard"><div class="label">sent orders</div><div class="value">${backendState.sentOrders.length}</div></div>
+            <div class="infoCard"><div class="label">push tickers</div><div class="value">${Object.keys(backendState.pushTickers).length}</div></div>
           </div>
         </div>
 
@@ -598,28 +745,51 @@ pub const WSTA_JS: &str = r#"
   function renderMakeBuzz() {
     return html`
       <div class="panelGrid">
-        <div class="panel">
-          <h2>Make Buzz Bomber</h2>
-          <div class="formGrid">
-            ${commonForm("buzz", "Buzz Bot 1", "SPY")}
+        <div class="formStack">
+          ${commonForm("buzz", "Buzz Bot 1", "SPY")}
 
-            <label>Cash alloc</label>
-            <input id="buzz_cashAlloc" value="150">
+          <div class="formSection">
+            <h3>Buzz Bomber Entry</h3>
+            <div class="formGrid">
+              <label>Cash alloc</label>
+              <input id="buzz_cashAlloc" value="150">
 
-            <label>Market direction</label>
-            ${marketDirectionSelect("buzz_marketDirection")}
+              <label>Market direction</label>
+              ${marketDirectionSelect("buzz_marketDirection")}
 
-            <label>Option expire days</label>
-            <input id="buzz_optionExpire" value="5">
+              <label>Minimum DTE</label>
+              <input id="buzz_optionExpire" value="5">
 
-            <label>Target spread</label>
-            <input id="buzz_targetSpread" value="0.25">
+              <label>Target spread</label>
+              <input id="buzz_targetSpread" value="0.25">
 
-            <label>Bombs forever</label>
-            <div class="checkLine">
-              <input id="buzz_bombsForever" type="checkbox" checked>
-              <span>repeat after resets</span>
+              <label>Algo cooldown seconds</label>
+              <input id="buzz_cooldownSeconds" value="0">
+
+              <label>Bombs forever</label>
+              <div class="checkLine">
+                <input id="buzz_bombsForever" type="checkbox" checked>
+                <span>repeat after resets</span>
+              </div>
             </div>
+          </div>
+
+          ${actionTimeForm("buzz_entry", "Entry timing")}
+
+          <div class="formSection">
+            <h3>Exit rule 1</h3>
+            <div class="formGrid">
+              <label>Exit kind</label>
+              <select id="buzz_exitKind">
+                <option value="SpreadValueGain">SpreadValueGain</option>
+                <option value="SpreadValueLoss">SpreadValueLoss</option>
+                <option value="SpreadValueTime">SpreadValueTime</option>
+              </select>
+
+              <label>Exit value</label>
+              <input id="buzz_exitValue" value="0.05">
+            </div>
+            ${actionTimeForm("buzz_exit_time", "Exit timing if SpreadValueTime")}
           </div>
 
           <div class="buttonRow">
@@ -638,37 +808,56 @@ pub const WSTA_JS: &str = r#"
   function renderMakeStealth() {
     return html`
       <div class="panelGrid">
-        <div class="panel">
-          <h2>Make Stealth Bot</h2>
-          <div class="formGrid">
-            ${commonForm("stealth", "Stealth Bot 1", "SPY")}
+        <div class="formStack">
+          ${commonForm("stealth", "Stealth Bot 1", "SPY")}
 
-            <label>Cash alloc</label>
-            <input id="stealth_cashAlloc" value="150">
+          <div class="formSection">
+            <h3>Stealth Entry / Exit</h3>
+            <div class="formGrid">
+              <label>Cash alloc</label>
+              <input id="stealth_cashAlloc" value="150">
 
-            <label>Market direction</label>
-            ${marketDirectionSelect("stealth_marketDirection")}
+              <label>Market direction</label>
+              ${marketDirectionSelect("stealth_marketDirection")}
 
-            <label>Option expire days</label>
-            <input id="stealth_optionExpire" value="5">
+              <label>Minimum DTE</label>
+              <input id="stealth_optionExpire" value="5">
 
-            <label>Option bucket</label>
-            <input id="stealth_optionBucket" value="0">
+              <label>Option bucket</label>
+              <input id="stealth_optionBucket" value="0">
 
-            <label>Spread bucket</label>
-            <input id="stealth_spreadBucket" value="1">
+              <label>Spread bucket</label>
+              <input id="stealth_spreadBucket" value="1">
 
-            <label>Exit gain %</label>
-            <input id="stealth_exitGainPct" value="50">
+              <label>Exit gain %</label>
+              <input id="stealth_exitGainPct" value="50">
 
-            <label>Exit loss %</label>
-            <input id="stealth_exitLossPct" value="-50">
+              <label>Exit loss %</label>
+              <input id="stealth_exitLossPct" value="-50">
 
-            <label>Use theo cost</label>
-            <div class="checkLine">
-              <input id="stealth_useTheoCost" type="checkbox">
-              <span>use theoretical cost</span>
+              <label>Use theo cost</label>
+              <div class="checkLine">
+                <input id="stealth_useTheoCost" type="checkbox">
+                <span>use theoretical cost</span>
+              </div>
             </div>
+          </div>
+
+          <div class="formSection">
+            <h3>Nice exit rule 1</h3>
+            <div class="formGrid">
+              <label>Exit kind</label>
+              <select id="stealth_exitKind">
+                <option value="OtmShort">OtmShort</option>
+                <option value="FinalPct">FinalPct</option>
+                <option value="PriorDay">PriorDay</option>
+                <option value="GoExpire">GoExpire</option>
+              </select>
+
+              <label>FinalPct value</label>
+              <input id="stealth_exitValue" value="50">
+            </div>
+            ${actionTimeForm("stealth_exit_time", "PriorDay timing")}
           </div>
 
           <div class="buttonRow">
@@ -687,11 +876,54 @@ pub const WSTA_JS: &str = r#"
   function renderMakeSally() {
     return html`
       <div class="panelGrid">
-        <div class="panel">
-          <h2>Make Sally Fakes</h2>
-          <p>First pass restores the Dr. Robotnik routing and accounting shell. Order-leg/reveal-way controls come next.</p>
-          <div class="formGrid">
-            ${commonForm("sally", "Sally Bot 1", "SPY")}
+        <div class="formStack">
+          ${commonForm("sally", "Sally Fakes 1", "BTC/USD")}
+
+          <div class="formSection">
+            <h3>Hidden Order Configuration</h3>
+            <div class="formGrid">
+              <label>Ticker</label>
+              <input id="sally_orderTicker" value="BTC/USD">
+
+              <label>Quantity</label>
+              <input id="sally_orderQuantity" value="1">
+
+              <label>Price</label>
+              <input id="sally_orderPrice" value="42">
+
+              <label>Action</label>
+              <select id="sally_orderAction">
+                <option value="BuyToOpen">BuyToOpen</option>
+                <option value="SellToOpen">SellToOpen</option>
+                <option value="BuyToClose">BuyToClose</option>
+                <option value="SellToClose">SellToClose</option>
+                <option value="BuyFutures">BuyFutures</option>
+                <option value="SellFutures">SellFutures</option>
+              </select>
+
+              <label>Order type</label>
+              <select id="sally_orderType">
+                <option value="Market">Market</option>
+                <option value="Limit" selected>Limit</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="formSection">
+            <h3>Reveal / Entry Strategy</h3>
+            <div class="formGrid">
+              <label>Reveal kind</label>
+              <select id="sally_revealKind">
+                <option value="SubmitRightAwayButLikeOnlyUseForTest">SubmitRightAwayButLikeOnlyUseForTest</option>
+                <option value="BidAskMid">SubmitWhenBidAskMidAttainsInputPrice</option>
+                <option value="MarketSide">SubmitWhenMarketSideReachesThisPrice</option>
+                <option value="TimeUnlessPrice">SubmitAtThisTimeUnlessItReachesPrice</option>
+              </select>
+
+              <label>Reveal price</label>
+              <input id="sally_revealPrice" value="42">
+            </div>
+            ${actionTimeForm("sally_reveal_time", "Reveal timing if time strategy")}
           </div>
 
           <div class="buttonRow">
@@ -710,11 +942,12 @@ pub const WSTA_JS: &str = r#"
   function renderMakeSwat() {
     return html`
       <div class="panelGrid">
-        <div class="panel">
-          <h2>Make Swat Bot</h2>
-          <p>First pass restores the Dr. Robotnik routing and accounting shell. Emerald/asset selection comes next.</p>
-          <div class="formGrid">
-            ${commonForm("swat", "Swat Bot 1", "SPY")}
+        <div class="formStack">
+          ${commonForm("swat", "Swat Bot 1", "SPY")}
+
+          <div class="formSection">
+            <h3>SWAT target</h3>
+            <p>Current dsta constructor only stores <code>CommonBotInfo</code>. Emerald/asset selection is display-context state in the old UI, not a field on <code>MakeSwatBotsGo</code>.</p>
           </div>
 
           <div class="buttonRow">
@@ -763,10 +996,12 @@ pub const WSTA_JS: &str = r#"
 
   function wirePayloadPreview(prefix, buildPacket) {
     const ids = Array.from(controlView.querySelectorAll("input, select")).map(x => x.id);
+
     const update = () => {
       const el = document.getElementById(`${prefix}_payload`);
       if (el) el.textContent = JSON.stringify(buildPacket(), null, 2);
     };
+
     for (const id of ids) {
       const el = document.getElementById(id);
       if (el) {
@@ -774,6 +1009,7 @@ pub const WSTA_JS: &str = r#"
         el.addEventListener("change", update);
       }
     }
+
     update();
   }
 
@@ -781,13 +1017,19 @@ pub const WSTA_JS: &str = r#"
     return {
       kind: "CreateBuzzBot",
       body: {
-        friendly_name: formValue("buzz_friendlyName"),
-        tracking_tick: formValue("buzz_trackingTick"),
-        cash_alloc: formNumber("buzz_cashAlloc"),
-        market_direction: formValue("buzz_marketDirection"),
-        option_expire: formNumber("buzz_optionExpire"),
-        target_spread: formNumber("buzz_targetSpread"),
-        bombs_forever: formChecked("buzz_bombsForever"),
+        common: commonPayload("buzz"),
+        cash_alloc: numberValue("buzz_cashAlloc"),
+        market_direction: value("buzz_marketDirection"),
+        option_expire: intValue("buzz_optionExpire"),
+        target_spread: numberValue("buzz_targetSpread"),
+        time_to_order: actionTimePayload("buzz_entry"),
+        follow_a_exit: [{
+          exit_kind: value("buzz_exitKind"),
+          value: numberValue("buzz_exitValue"),
+          time: actionTimePayload("buzz_exit_time"),
+        }],
+        algo_cooldown_seconds: intValue("buzz_cooldownSeconds"),
+        bombs_forever: checked("buzz_bombsForever"),
       },
     };
   }
@@ -801,16 +1043,20 @@ pub const WSTA_JS: &str = r#"
     return {
       kind: "CreateStealthBot",
       body: {
-        friendly_name: formValue("stealth_friendlyName"),
-        tracking_tick: formValue("stealth_trackingTick"),
-        cash_alloc: formNumber("stealth_cashAlloc"),
-        market_direction: formValue("stealth_marketDirection"),
-        option_expire: formNumber("stealth_optionExpire"),
-        option_bucket: formNumber("stealth_optionBucket"),
-        spread_bucket: formNumber("stealth_spreadBucket"),
-        exit_gain_pct: formNumber("stealth_exitGainPct"),
-        exit_loss_pct: formNumber("stealth_exitLossPct"),
-        use_theo_cost: formChecked("stealth_useTheoCost"),
+        common: commonPayload("stealth"),
+        cash_alloc: numberValue("stealth_cashAlloc"),
+        market_direction: value("stealth_marketDirection"),
+        option_expire: intValue("stealth_optionExpire"),
+        option_bucket: intValue("stealth_optionBucket"),
+        spread_bucket: intValue("stealth_spreadBucket"),
+        exit_gain_pct: numberValue("stealth_exitGainPct"),
+        exit_loss_pct: numberValue("stealth_exitLossPct"),
+        nice_exit_way: [{
+          exit_kind: value("stealth_exitKind"),
+          value: numberValue("stealth_exitValue"),
+          time: actionTimePayload("stealth_exit_time"),
+        }],
+        use_theo_cost: checked("stealth_useTheoCost"),
       },
     };
   }
@@ -824,8 +1070,19 @@ pub const WSTA_JS: &str = r#"
     return {
       kind: "CreateSallyBot",
       body: {
-        friendly_name: formValue("sally_friendlyName"),
-        tracking_tick: formValue("sally_trackingTick"),
+        common: commonPayload("sally"),
+        order: {
+          ticker: value("sally_orderTicker"),
+          quantity: numberValue("sally_orderQuantity"),
+          price: numberValue("sally_orderPrice"),
+          action: value("sally_orderAction"),
+          order_type: value("sally_orderType"),
+        },
+        reveal: {
+          reveal_kind: value("sally_revealKind"),
+          price: numberValue("sally_revealPrice"),
+          time: actionTimePayload("sally_reveal_time"),
+        },
       },
     };
   }
@@ -839,8 +1096,7 @@ pub const WSTA_JS: &str = r#"
     return {
       kind: "CreateSwatBot",
       body: {
-        friendly_name: formValue("swat_friendlyName"),
-        tracking_tick: formValue("swat_trackingTick"),
+        common: commonPayload("swat"),
       },
     };
   }
@@ -848,6 +1104,11 @@ pub const WSTA_JS: &str = r#"
   function wireMakeSwat() {
     wirePayloadPreview("swat", buildSwatPacket);
     document.getElementById("swat_create").addEventListener("click", () => sendPacket(buildSwatPacket()));
+  }
+
+  function wireTtaiOverview() {
+    const btn = document.getElementById("ttai_report");
+    if (btn) btn.addEventListener("click", () => sendPacket({kind: "ReportOfAllStatus"}));
   }
 
   function renderGenericView(view) {
