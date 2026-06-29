@@ -298,7 +298,7 @@ button {
   min-height: 0;
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: rgba(7, 16, 31, 0.80);
+  background: rgba(7, 16, 31, 0.48);
   padding: 8px;
   display: flex;
   flex-direction: column;
@@ -338,9 +338,23 @@ button {
 }
 
 #drRobotnikDisplay {
+  position: relative;
   min-width: 0;
   min-height: 0;
   overflow: auto;
+  border: 1px solid rgba(150, 190, 255, 0.12);
+  border-radius: 12px;
+  background:
+    linear-gradient(rgba(5, 7, 11, 0.52), rgba(5, 7, 11, 0.52)),
+    var(--dr-tool-bg, none);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+#drRobotnikDisplay > * {
+  position: relative;
+  z-index: 1;
 }
 
 .panelGrid {
@@ -354,8 +368,9 @@ button {
 .formSection {
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: rgba(7, 16, 31, 0.80);
+  background: rgba(7, 16, 31, 0.48);
   padding: 14px;
+  backdrop-filter: blur(2px);
 }
 
 .formStack {
@@ -381,7 +396,7 @@ button {
   border: 1px solid rgba(150, 190, 255, 0.18);
   border-radius: 10px;
   padding: 10px;
-  background: rgba(2, 4, 10, 0.52);
+  background: rgba(2, 4, 10, 0.34);
 }
 
 .infoCard .label {
@@ -415,7 +430,7 @@ select {
   padding: 7px 9px;
   border: 1px solid rgba(112, 214, 255, 0.34);
   border-radius: 7px;
-  background: #02040a;
+  background: rgba(2, 4, 10, 0.62);
   color: var(--text);
   font: 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
@@ -473,7 +488,7 @@ pre {
 .payloadPre {
   padding: 10px;
   min-height: 180px;
-  background: #02040a;
+  background: rgba(2, 4, 10, 0.62);
   border: 1px solid rgba(150, 190, 255, 0.18);
   border-radius: 8px;
 }
@@ -534,6 +549,27 @@ pub const WSTA_JS: &str = r#"
     viewTitle.textContent = title;
     viewSubtitle.textContent = subtitle;
   }
+
+  function drToolBackground(tool) {
+    switch (tool) {
+      case "MakeBuzz": return "url('/assets/images/buzz_button.jpg')";
+      case "MakeStealth": return "url('/assets/images/stealth_button.jpg')";
+      case "MakeSally": return "url('/assets/images/sally_button.jpg')";
+      case "MakeSwat": return "url('/assets/images/swat_button.jpg')";
+      case "TtaiOverview": return "url('/assets/images/logs_button.jpg')";
+      case "Overview":
+      default:
+        return "url('/assets/images/dr_robo_button.jpg')";
+    }
+  }
+
+  function setDrToolBackground(tool) {
+    const display = document.getElementById("drRobotnikDisplay");
+    if (display) {
+      display.style.setProperty("--dr-tool-bg", drToolBackground(tool));
+    }
+  }
+
 
   function html(strings, ...values) {
     return strings.reduce((out, s, i) => out + s + (values[i] ?? ""), "");
@@ -667,9 +703,15 @@ pub const WSTA_JS: &str = r#"
     const template = document.getElementById("drRobotnikTemplate");
     controlView.replaceChildren(template.content.cloneNode(true));
 
-    for (const btn of controlView.querySelectorAll(".drTool")) {
-      btn.classList.toggle("selected", btn.dataset.drTool === selectedDrTool);
-      btn.addEventListener("click", () => {
+    const toolNav = document.getElementById("drRobotnikTools");
+    if (toolNav) {
+      toolNav.addEventListener("click", (ev) => {
+        const btn = ev.target.closest(".drTool");
+        if (!btn || !toolNav.contains(btn)) return;
+
+        ev.preventDefault();
+        ev.stopPropagation();
+
         selectedDrTool = btn.dataset.drTool;
         renderDrTool();
       });
@@ -682,6 +724,8 @@ pub const WSTA_JS: &str = r#"
     for (const btn of controlView.querySelectorAll(".drTool")) {
       btn.classList.toggle("selected", btn.dataset.drTool === selectedDrTool);
     }
+
+    setDrToolBackground(selectedDrTool);
 
     const display = document.getElementById("drRobotnikDisplay");
 
