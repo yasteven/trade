@@ -88,7 +88,7 @@ live_design! {
                             ttai_nav = <WstaButton> {text: "TTAI"}
                             nico_nav = <WstaButton> {text: "Nico"}
                             logs_nav = <WstaButton> {text: "Logs"}
-                            transport_label = <Label> {text: "transport: retrying", draw_text: {color: #ffd166, text_style: {font_size: 11.0}}}
+                            transport_label = <Label> {text: "transport: UI loaded / backend retrying", draw_text: {color: #ffd166, text_style: {font_size: 11.0}}}
                         }
 
                         content = <View> {
@@ -199,7 +199,7 @@ live_design! {
                         show_bg: true,
                         draw_bg: {color: #040914f4}
                         debug_title = <Label> {text: "debug / backend info", draw_text: {color: #70d6ff, text_style: {font_size: 12.0}}}
-                        debug_text = <Label> {text: "wsta_makepad booting", draw_text: {color: #aac8f0, text_style: {font_size: 11.0}}}
+                        debug_text = <Label> {text: "wsta_makepad UI booting; backend connection is optional", draw_text: {color: #aac8f0, text_style: {font_size: 11.0}}}
                     }
                 }
             }
@@ -224,52 +224,100 @@ impl LiveRegister for App {
     }
 }
 
+impl MatchEvent for App {
+    fn handle_startup(&mut self, cx: &mut Cx) {
+        self.selected_view = WstaView::DrR;
+        self.selected_dr_tool = DrTool::Overview;
+        self.transport = WstaTransport::new();
+        self.debug_lines = vec!["wsta_makepad UI started; backend transport may still be retrying".to_string()];
+
+        self.sync_ui(cx);
+        self.send_packet(cx, BrowserToWsta::SelectView { view: WstaView::DrR });
+    }
+
+    fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions) {
+        if self.ui.button(id!(dr_nav)).clicked(actions) {
+            self.select_view(cx, WstaView::DrR);
+        }
+
+        if self.ui.button(id!(buzz_nav)).clicked(actions) {
+            self.select_view(cx, WstaView::Buzz);
+        }
+
+        if self.ui.button(id!(stealth_nav)).clicked(actions) {
+            self.select_view(cx, WstaView::Stealth);
+        }
+
+        if self.ui.button(id!(sally_nav)).clicked(actions) {
+            self.select_view(cx, WstaView::Sally);
+        }
+
+        if self.ui.button(id!(swat_nav)).clicked(actions) {
+            self.select_view(cx, WstaView::Swat);
+        }
+
+        if self.ui.button(id!(ttai_nav)).clicked(actions) {
+            self.select_view(cx, WstaView::Ttai);
+        }
+
+        if self.ui.button(id!(nico_nav)).clicked(actions) {
+            self.select_view(cx, WstaView::Nico);
+        }
+
+        if self.ui.button(id!(logs_nav)).clicked(actions) {
+            self.select_view(cx, WstaView::Logs);
+        }
+
+        if self.ui.button(id!(dr_overview_tool)).clicked(actions) {
+            self.select_tool(cx, DrTool::Overview);
+        }
+
+        if self.ui.button(id!(dr_buzz_tool)).clicked(actions) {
+            self.select_tool(cx, DrTool::MakeBuzz);
+        }
+
+        if self.ui.button(id!(dr_stealth_tool)).clicked(actions) {
+            self.select_tool(cx, DrTool::MakeStealth);
+        }
+
+        if self.ui.button(id!(dr_sally_tool)).clicked(actions) {
+            self.select_tool(cx, DrTool::MakeSally);
+        }
+
+        if self.ui.button(id!(dr_swat_tool)).clicked(actions) {
+            self.select_tool(cx, DrTool::MakeSwat);
+        }
+
+        if self.ui.button(id!(dr_ttai_tool)).clicked(actions) {
+            self.select_tool(cx, DrTool::TtaiOverview);
+        }
+
+        if self.ui.button(id!(create_bot)).clicked(actions) {
+            if let Some(pkt) = self.make_packet() {
+                self.send_packet(cx, pkt);
+            }
+        }
+
+        if self.ui.button(id!(report_status)).clicked(actions) {
+            self.send_packet(cx, BrowserToWsta::ReportOfAllStatus);
+        }
+
+        if self.ui.button(id!(send_log)).clicked(actions) {
+            self.send_packet(cx, BrowserToWsta::SendLogNote {
+                text: "hello from wsta_makepad".to_string(),
+            });
+        }
+    }
+}
+
 impl AppMain for App {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event) {
+        self.match_event(cx, event);
         self.ui.handle_event(cx, event, &mut Scope::empty());
-        if let Event::Startup = event {
-            self.boot(cx);
-        }
-        self.handle_buttons(cx);
     }
 }
 
 impl App {
-    fn boot(&mut self, cx: &mut Cx) {
-        self.selected_view = WstaView::DrR;
-        self.selected_dr_tool = DrTool::Overview;
-        self.transport = WstaTransport::new();
-        self.debug_lines = vec!["wsta_makepad started".to_string()];
-        self.send_packet(cx, BrowserToWsta::SelectView { view: WstaView::DrR });
-        self.sync_ui(cx);
-    }
-
-    fn handle_buttons(&mut self, cx: &mut Cx) {
-        let actions = cx.capture_actions(|cx| self.ui.handle_event(cx, &Event::None, &mut Scope::empty()));
-
-        if self.ui.button(id!(dr_nav)).clicked(&actions) { self.select_view(cx, WstaView::DrR); }
-        if self.ui.button(id!(buzz_nav)).clicked(&actions) { self.select_view(cx, WstaView::Buzz); }
-        if self.ui.button(id!(stealth_nav)).clicked(&actions) { self.select_view(cx, WstaView::Stealth); }
-        if self.ui.button(id!(sally_nav)).clicked(&actions) { self.select_view(cx, WstaView::Sally); }
-        if self.ui.button(id!(swat_nav)).clicked(&actions) { self.select_view(cx, WstaView::Swat); }
-        if self.ui.button(id!(ttai_nav)).clicked(&actions) { self.select_view(cx, WstaView::Ttai); }
-        if self.ui.button(id!(nico_nav)).clicked(&actions) { self.select_view(cx, WstaView::Nico); }
-        if self.ui.button(id!(logs_nav)).clicked(&actions) { self.select_view(cx, WstaView::Logs); }
-
-        if self.ui.button(id!(dr_overview_tool)).clicked(&actions) { self.select_tool(cx, DrTool::Overview); }
-        if self.ui.button(id!(dr_buzz_tool)).clicked(&actions) { self.select_tool(cx, DrTool::MakeBuzz); }
-        if self.ui.button(id!(dr_stealth_tool)).clicked(&actions) { self.select_tool(cx, DrTool::MakeStealth); }
-        if self.ui.button(id!(dr_sally_tool)).clicked(&actions) { self.select_tool(cx, DrTool::MakeSally); }
-        if self.ui.button(id!(dr_swat_tool)).clicked(&actions) { self.select_tool(cx, DrTool::MakeSwat); }
-        if self.ui.button(id!(dr_ttai_tool)).clicked(&actions) { self.select_tool(cx, DrTool::TtaiOverview); }
-
-        if self.ui.button(id!(create_bot)).clicked(&actions) {
-            if let Some(pkt) = self.make_packet() { self.send_packet(cx, pkt); }
-        }
-        if self.ui.button(id!(report_status)).clicked(&actions) { self.send_packet(cx, BrowserToWsta::ReportOfAllStatus); }
-        if self.ui.button(id!(send_log)).clicked(&actions) { self.send_packet(cx, BrowserToWsta::SendLogNote { text: "hello from wsta_makepad".to_string() }); }
-    }
-
     fn select_view(&mut self, cx: &mut Cx, view: WstaView) {
         self.selected_view = view;
         self.send_packet(cx, BrowserToWsta::SelectView { view });
@@ -305,7 +353,7 @@ impl App {
         };
         self.ui.label(id!(display_title)).set_text(cx, display);
         self.ui.label(id!(display_hint)).set_text(cx, self.form_hint());
-        self.ui.label(id!(transport_label)).set_text(cx, "transport: WebTransport retry adapter");
+        self.ui.label(id!(transport_label)).set_text(cx, "transport: UI loaded / backend retrying");
         self.ui.label(id!(debug_text)).set_text(cx, &self.debug_lines.join("\n"));
     }
 

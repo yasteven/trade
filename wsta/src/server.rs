@@ -6,8 +6,11 @@
 
 use crate::actor::ActorHandle;
 use axum::{
+    body::Body,
     extract::State,
-    response::{Html, IntoResponse},
+    http::{HeaderValue, Request},
+    middleware::{self, Next},
+    response::{Html, IntoResponse, Response},
     routing::get,
     Router,
 };
@@ -45,11 +48,17 @@ pub async fn run(
 
     let app = Router::new()
         .route("/", get(index))
-        .nest_service("/makepad", ServeDir::new("wsta_makepad/target/makepad-wasm").fallback(ServeDir::new("wsta_makepad/target/wasm")).fallback(ServeDir::new("wsta_makepad/target/web")).fallback(ServeDir::new("wsta_makepad/resources/web")))
+        .nest_service(
+            "/makepad",
+            ServeDir::new("wsta_makepad/target/makepad-wasm")
+                .fallback(ServeDir::new("wsta_makepad/resources/web")),
+        )
+        .nest_service("/resources", ServeDir::new("wsta_makepad/resources"))
         .nest_service("/makepad_resources", ServeDir::new("wsta_makepad/resources"))
         .nest_service("/assets/images", ServeDir::new("wsta/assets/images"))
         .route("/status", get(status))
         .layer(CorsLayer::permissive())
+        .layer(middleware::from_fn(add_cross_origin_isolation_headers))
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind(&cfg.http_bind).await?;
@@ -58,6 +67,40 @@ pub async fn run(
     axum::serve(listener, app).await?;
 
     Ok(())
+}
+
+
+async fn add_cross_origin_isolation_headers(
+    request: Request<Body>,
+    next: Next,
+) -> Response {
+    let mut response = next.run(request).await;
+    let headers = response.headers_mut();
+
+    // Makepad WASM packages use shared-memory/thread-oriented browser features.
+    // Browsers require cross-origin isolation for those paths. Apply these to
+    // the shell and static assets so the UI can render instead of hanging at
+    // the generated Makepad "loading" state.
+    headers.insert(
+        "Cross-Origin-Opener-Policy",
+        HeaderValue::from_static("same-origin"),
+    );
+    headers.insert(
+        "Cross-Origin-Embedder-Policy",
+        HeaderValue::from_static("require-corp"),
+    );
+    headers.insert(
+        "Cross-Origin-Resource-Policy",
+        HeaderValue::from_static("same-origin"),
+    );
+
+    // Be explicit for wasm/js assets when tower's extension mapping is absent
+    // or conservative on embedded systems.
+    if let Some(path) = response.extensions().get::<String>() {
+        let _ = path;
+    }
+
+    response
 }
 
 async fn index(State(_state): State<AppState>) -> Html<&'static str> {

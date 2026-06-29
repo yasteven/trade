@@ -7,7 +7,6 @@ ALL_RS_OUT="$OUT_DIR/cat_all_rs.txt"
 ALL_TOML_OUT="$OUT_DIR/cat_all_toml.txt"
 
 mkdir -p "$OUT_DIR"
-
 : > "$ALL_OUT"
 : > "$ALL_RS_OUT"
 : > "$ALL_TOML_OUT"
@@ -16,11 +15,9 @@ append_file() {
     local out_file="$1"
     local path="$2"
     local label="$3"
-
     if [[ ! -f "$path" ]]; then
         return 0
     fi
-
     {
         echo
         echo "################################################################"
@@ -37,7 +34,6 @@ append_tree_files() {
     local out_file="$1"
     local root="$2"
     local label="$3"
-
     if [[ ! -d "$root" ]]; then
         {
             echo
@@ -50,7 +46,6 @@ append_tree_files() {
         } >> "$out_file"
         return 0
     fi
-
     {
         echo
         echo "################################################################"
@@ -59,7 +54,6 @@ append_tree_files() {
         echo "################################################################"
         echo
     } >> "$out_file"
-
     find "$root" \
       -path "$root/target" -prune -o \
       -path "$root/.git" -prune -o \
@@ -97,18 +91,14 @@ append_tree_files() {
 
 append_crate_rs() {
     local crate_dir="$1"
-
     if [[ ! -d "$crate_dir/src" ]]; then
         return 0
     fi
-
     local crate_name
     crate_name="${crate_dir#./}"
     crate_name="${crate_name//\//_}"
-
     local crate_out="$OUT_DIR/src_${crate_name}_rs.txt"
     : > "$crate_out"
-
     {
         echo "================================================================"
         echo "RUST CRATE: $crate_name"
@@ -116,7 +106,6 @@ append_crate_rs() {
         echo "================================================================"
         echo
     } >> "$crate_out"
-
     find "$crate_dir/src" -type f -name '*.rs' -print \
     | sort \
     | while read -r rs_file; do
@@ -130,7 +119,6 @@ append_crate_rs() {
             echo
         } >> "$crate_out"
     done
-
     {
         echo
         echo "################################################################"
@@ -141,34 +129,28 @@ append_crate_rs() {
         cat "$crate_out"
         echo
     } >> "$ALL_RS_OUT"
-
     echo "wrote $crate_out"
 }
 
 echo "== collecting trade root files =="
-
 append_file "$ALL_OUT" "./Cargo.toml" "WORKSPACE CARGO TOML"
 append_file "$ALL_OUT" "./Containerfile" "CONTAINERFILE"
 append_file "$ALL_OUT" "./build_for_alpine.sh" "BUILD SCRIPT"
 append_file "$ALL_OUT" "./.gitignore" "GITIGNORE"
-
 append_file "$ALL_TOML_OUT" "./Cargo.toml" "WORKSPACE CARGO TOML"
 
 echo "== collecting selected directories into aggregate =="
-
-for dir in ./dsta ./ttrs ./usta ./vsta; do
+for dir in ./dsta ./ttrs ./usta ./vsta ./wsta ./wsta_makepad; do
     append_tree_files "$ALL_OUT" "$dir" "$dir"
 done
 
 echo "== collecting Rust source files =="
-
-for crate_dir in ./dsta ./ttrs ./usta ./vsta; do
+for crate_dir in ./dsta ./ttrs ./usta ./vsta ./wsta ./wsta_makepad; do
     append_crate_rs "$crate_dir"
 done
 
 echo "== collecting Cargo.toml files =="
-
-find ./dsta ./ttrs ./usta ./vsta \
+find ./dsta ./ttrs ./usta ./vsta ./wsta ./wsta_makepad \
   -path '*/target' -prune -o \
   -path '*/.git' -prune -o \
   -name Cargo.toml -type f -print \

@@ -1,4 +1,5 @@
 // trade/wsta_makepad/src/protocol.rs
+// WASM-safe JSON protocol mirror; no dsta dependency here.
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum WstaView {
@@ -12,6 +13,12 @@ pub enum WstaView {
     Logs,
 }
 
+impl Default for WstaView {
+    fn default() -> Self {
+        Self::DrR
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DrTool {
     Overview,
@@ -20,6 +27,12 @@ pub enum DrTool {
     MakeSally,
     MakeSwat,
     TtaiOverview,
+}
+
+impl Default for DrTool {
+    fn default() -> Self {
+        Self::Overview
+    }
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
