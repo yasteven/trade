@@ -1,10 +1,4 @@
 // trade/wsta_makepad/src/transport.rs
-//
-// Final frontend transport boundary.
-//
-// Native builds keep a debug record only.
-// WASM builds call the browser WebTransport adapter in resources/web/wsta_transport.js.
-// That JS file is only the browser API adapter, not the UI.
 
 use crate::protocol::BrowserToWsta;
 
@@ -29,19 +23,14 @@ impl WstaTransport {
     pub fn send(&mut self, pkt: &BrowserToWsta) -> Result<(), String> {
         let json = serde_json::to_string(pkt)
             .map_err(|e| format!("serialize BrowserToWsta failed: {}", e))?;
-
         self.last_sent_debug = json.clone();
 
         #[cfg(target_arch = "wasm32")]
         {
             wasm_send_json(&json);
-            Ok(())
         }
 
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            Ok(())
-        }
+        Ok(())
     }
 }
 

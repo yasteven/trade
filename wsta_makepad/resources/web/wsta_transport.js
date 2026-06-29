@@ -1,20 +1,11 @@
 // trade/wsta_makepad/resources/web/wsta_transport.js
-//
-// Browser API adapter for the Makepad/WASM frontend.
-// This is not UI code. Makepad owns the UI.
-// This adapter owns WebTransport because WebTransport is a browser API.
-//
-// Runtime behavior:
-// - queue outbound packets until connected
-// - retry connection forever every few seconds
-// - if the stream closes, reconnect and keep queued packets
+// Browser WebTransport adapter. Not UI.
 
 let wstaTransport = null;
 let wstaWriter = null;
 let pending = [];
 let connecting = false;
-let reconnectTimer = null;
-let connectAttempt = 0;
+const RETRY_MS = 3000;
 
 function defaultTransportUrl() {
   const params = new URLSearchParams(window.location.search);
@@ -23,86 +14,47 @@ function defaultTransportUrl() {
   return "https://localhost:8089/transport/wsta-control";
 }
 
-function note(...args) {
-  console.log("wsta transport:", ...args);
-}
-
-function warn(...args) {
-  console.warn("wsta transport:", ...args);
-}
-
-function clearWriter() {
-  try {
-    if (wstaWriter) wstaWriter.releaseLock();
-  } catch (_e) {}
-
-  wstaWriter = null;
-  wstaTransport = null;
-}
-
-function scheduleReconnect(reason) {
-  clearWriter();
-
-  if (reason) warn("reconnect scheduled:", reason);
-
-  if (reconnectTimer) return;
-
-  reconnectTimer = setTimeout(() => {
-    reconnectTimer = null;
-    connectWstaTransport();
-  }, 3000);
-}
-
-async function flushPending() {
-  if (!wstaWriter) return;
-
-  while (pending.length > 0 && wstaWriter) {
-    const line = pending.shift();
-    await wstaWriter.write(new TextEncoder().encode(line + "\n"));
-  }
-}
-
-async function connectWstaTransport() {
+async function connectWstaTransportForever() {
   if (connecting) return;
-
-  if (!("WebTransport" in window)) {
-    scheduleReconnect("WebTransport is not available in this browser");
-    return;
-  }
-
   connecting = true;
-  connectAttempt += 1;
 
-  const url = defaultTransportUrl();
+  while (!wstaWriter) {
+    try {
+      if (!("WebTransport" in window)) {
+        console.error("WebTransport is not available in this browser; retrying");
+        await sleep(RETRY_MS);
+        continue;
+      }
 
-  try {
-    note("connecting", url, "attempt", connectAttempt);
+      const url = defaultTransportUrl();
+      console.log("wsta Makepad WebTransport connecting", url);
 
-    const transport = new WebTransport(url);
-    await transport.ready;
+      wstaTransport = new WebTransport(url);
+      await wstaTransport.ready;
 
-    const stream = await transport.createBidirectionalStream();
-    const writer = stream.writable.getWriter();
+      const stream = await wstaTransport.createBidirectionalStream();
+      wstaWriter = stream.writable.getWriter();
 
-    wstaTransport = transport;
-    wstaWriter = writer;
+      for (const line of pending) {
+        await wstaWriter.write(new TextEncoder().encode(line + "\n"));
+      }
+      pending = [];
 
-    note("connected", url);
+      readWstaTransport(stream.readable).catch((e) => {
+        console.error("wsta read loop failed", e);
+        resetAndRetry();
+      });
 
-    readWstaTransport(stream.readable).catch((e) => {
-      scheduleReconnect("read loop failed: " + (e && e.message ? e.message : String(e)));
-    });
-
-    transport.closed
-      .then(() => scheduleReconnect("transport closed"))
-      .catch((e) => scheduleReconnect("transport closed with error: " + (e && e.message ? e.message : String(e))));
-
-    await flushPending();
-  } catch (e) {
-    scheduleReconnect(e && e.message ? e.message : String(e));
-  } finally {
-    connecting = false;
+      console.log("wsta Makepad WebTransport connected", url);
+    } catch (e) {
+      console.error("wsta Makepad WebTransport failed; retrying", e);
+      wstaWriter = null;
+      wstaTransport = null;
+      await sleep(RETRY_MS);
+    }
   }
+
+  connecting = false;
 }
 
 async function readWstaTransport(readable) {
@@ -115,38 +67,40 @@ async function readWstaTransport(readable) {
     if (done) break;
 
     buffered += decoder.decode(value, {stream: true});
-
     let idx;
     while ((idx = buffered.indexOf("\n")) >= 0) {
       const line = buffered.slice(0, idx).trim();
       buffered = buffered.slice(idx + 1);
-
-      if (line) {
-        console.log("wsta backend -> makepad", line);
-      }
+      if (line) console.log("wsta backend -> makepad", line);
     }
   }
 
-  scheduleReconnect("server stream closed");
+  resetAndRetry();
+}
+
+function resetAndRetry() {
+  wstaWriter = null;
+  wstaTransport = null;
+  connecting = false;
+  setTimeout(connectWstaTransportForever, RETRY_MS);
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 export function wstaSendJson(json) {
-  if (typeof json !== "string") {
-    json = JSON.stringify(json);
-  }
-
   if (!wstaWriter) {
     pending.push(json);
-    connectWstaTransport();
+    connectWstaTransportForever();
     return;
   }
 
-  wstaWriter
-    .write(new TextEncoder().encode(json + "\n"))
-    .catch((e) => {
-      pending.unshift(json);
-      scheduleReconnect("write failed: " + (e && e.message ? e.message : String(e)));
-    });
+  wstaWriter.write(new TextEncoder().encode(json + "\n")).catch((e) => {
+    console.error("wsta send failed; queueing and retrying", e);
+    pending.push(json);
+    resetAndRetry();
+  });
 }
 
-connectWstaTransport();
+connectWstaTransportForever();

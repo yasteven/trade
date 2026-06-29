@@ -1,8 +1,4 @@
 // trade/wsta_makepad/src/protocol.rs
-//
-// Same browser-facing packet envelope as wsta backend.
-// The canonical backend protocol is still dsta::Snively; wsta backend performs
-// final translation and seek routing.
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum WstaView {
@@ -31,15 +27,7 @@ pub enum DrTool {
 pub enum BrowserToWsta {
     SelectView { view: WstaView },
     SendLogNote { text: String },
-
-    LiveBotName { name: String },
-    StopBotName { name: String },
-    KillBotName { name: String },
-
-    SubscribeToTicker { ticker: String },
-    UnsubscribeTicker { ticker: String },
     ReportOfAllStatus,
-
     CreateBuzzBot(CreateBuzzBotInput),
     CreateStealthBot(CreateStealthBotInput),
     CreateSallyBot(CreateSallyBotInput),
@@ -131,7 +119,7 @@ pub struct CreateSwatBotInput {
     pub common: CommonBotInfoInput,
 }
 
-pub fn default_common(name: &str, ticker: &str) -> CommonBotInfoInput {
+pub fn common(name: &str, ticker: &str) -> CommonBotInfoInput {
     CommonBotInfoInput {
         friendly_name: name.to_string(),
         tracking_tick: ticker.to_string(),
@@ -141,7 +129,7 @@ pub fn default_common(name: &str, ticker: &str) -> CommonBotInfoInput {
     }
 }
 
-pub fn default_action_time() -> BotActionTimeInput {
+pub fn action_time() -> BotActionTimeInput {
     BotActionTimeInput {
         relative_days: 0,
         market_time: "PowerEnds".to_string(),
