@@ -1,0 +1,16 @@
+[package]
+name = "wsta_makepad"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+dsta = { path = "../dsta" }
+
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = { version = "0.4", features = ["serde"] }
+
+makepad-widgets = { git = "https://github.com/makepad/makepad", package = "makepad-widgets" }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"

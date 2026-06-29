@@ -2,6 +2,6 @@
 members = [
     "ttrs",
     "usta",
-    "vsta", "wsta",
+    "vsta", "wsta", "wsta_makepad",
     "dsta",
 ]

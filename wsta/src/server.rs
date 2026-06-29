@@ -34,20 +34,19 @@ impl WstaServerConfig {
 
 #[derive(Clone)]
 struct AppState {
-    actor: ActorHandle,
+    _actor: ActorHandle,
 }
 
 pub async fn run(
     cfg: WstaServerConfig,
     actor: ActorHandle,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let state = AppState { actor };
+    let state = AppState { _actor: actor };
 
     let app = Router::new()
         .route("/", get(index))
-        .route("/makepad/", get(index))
-        .route("/assets/wsta.css", get(css))
-        .route("/assets/wsta.js", get(js))
+        .nest_service("/makepad", ServeDir::new("wsta_makepad/target/makepad-wasm").fallback(ServeDir::new("wsta_makepad/target/wasm")).fallback(ServeDir::new("wsta_makepad/target/web")).fallback(ServeDir::new("wsta_makepad/resources/web")))
+        .nest_service("/makepad_resources", ServeDir::new("wsta_makepad/resources"))
         .nest_service("/assets/images", ServeDir::new("wsta/assets/images"))
         .route("/status", get(status))
         .layer(CorsLayer::permissive())
@@ -63,21 +62,6 @@ pub async fn run(
 
 async fn index(State(_state): State<AppState>) -> Html<&'static str> {
     Html(crate::web::INDEX_HTML)
-}
-
-async fn css() -> impl IntoResponse {
-    (
-        [("content-type", "text/css; charset=utf-8")],
-        crate::web::WSTA_CSS,
-    )
-}
-
-async fn js(State(state): State<AppState>) -> impl IntoResponse {
-    state.actor.notify_browser_connected().await;
-    (
-        [("content-type", "application/javascript; charset=utf-8")],
-        crate::web::WSTA_JS,
-    )
 }
 
 async fn status() -> impl IntoResponse {
