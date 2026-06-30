@@ -34,7 +34,7 @@ def write_config(path: str):
     s = p.read_text() if p.exists() else ""
 
     section = "[target.wasm32-unknown-unknown]"
-    rustflags = 'rustflags = ["-C", "target-feature=+atomics,+bulk-memory,+mutable-globals", "-C", "link-args=--allow-undefined", "-C", "link-arg=--export=__stack_pointer"]'
+    rustflags = 'rustflags = ["-C", "target-feature=+atomics,+bulk-memory,+mutable-globals", "-C", "link-args=--shared-memory --import-memory --max-memory=2147483648 --allow-undefined", "-C", "link-arg=--export=__stack_pointer"]'
 
     out = []
     lines = s.splitlines()
@@ -70,9 +70,9 @@ hard_force_makepad_wasm_rustflags() {
   local sep
   sep="$(printf '\037')"
 
-  export CARGO_ENCODED_RUSTFLAGS="-Ctarget-feature=+atomics,+bulk-memory,+mutable-globals${sep}-Clink-args=--allow-undefined${sep}-Clink-arg=--export=__stack_pointer"
-  export CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUSTFLAGS="-C target-feature=+atomics,+bulk-memory,+mutable-globals -C link-args=--allow-undefined -C link-arg=--export=__stack_pointer"
-  export RUSTFLAGS="-C target-feature=+atomics,+bulk-memory,+mutable-globals -C link-args=--allow-undefined -C link-arg=--export=__stack_pointer"
+  export CARGO_ENCODED_RUSTFLAGS="-Ctarget-feature=+atomics,+bulk-memory,+mutable-globals${sep}-Clink-args=--shared-memory --import-memory --max-memory=2147483648 --allow-undefined${sep}-Clink-arg=--export=__stack_pointer"
+  export CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUSTFLAGS="-C target-feature=+atomics,+bulk-memory,+mutable-globals -C link-args=--shared-memory --import-memory --max-memory=2147483648 --allow-undefined -C link-arg=--export=__stack_pointer"
+  export RUSTFLAGS="-C target-feature=+atomics,+bulk-memory,+mutable-globals -C link-args=--shared-memory --import-memory --max-memory=2147483648 --allow-undefined -C link-arg=--export=__stack_pointer"
 
   echo "CARGO_ENCODED_RUSTFLAGS is set for Makepad WASM link"
   echo "CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUSTFLAGS=${CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUSTFLAGS}"
@@ -189,7 +189,8 @@ find_makepad_package_dir() {
 copy_makepad_dependency_resources() {
   local dst_pkg="$1"
 
-  echo "== copying Makepad dependency resources into deployed package =="
+  echo "== deploying lean Makepad dependency resources =="
+  echo "No real Chinese font payloads are deployed; Chinese font URL paths get small Latin fallback TTFs."
 
   python - "$dst_pkg" <<'PY2'
 from pathlib import Path
@@ -204,71 +205,54 @@ search_roots = [
 
 copied = []
 
-def clean_crate_url_dir(crate_dir: Path) -> str:
-    name = crate_dir.name
-    while True:
-        parts = name.rsplit("-", 1)
-        if len(parts) == 2 and parts[1] and parts[1][0].isdigit():
-            name = parts[0]
-        else:
-            break
-    return name.replace("-", "_")
-
-def copy_resources(crate_dir: Path):
-    src_res = crate_dir / "resources"
-    if not src_res.is_dir():
-        return
-
-    out_res = dst / clean_crate_url_dir(crate_dir) / "resources"
-    out_res.mkdir(parents=True, exist_ok=True)
-
-    for f in src_res.rglob("*"):
-        if f.is_file():
-            out = out_res / f.relative_to(src_res)
-            out.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(f, out)
-            copied.append(str(out))
-
-for root in search_roots:
-    if not root.exists():
-        continue
-    for crate_dir in root.rglob("*"):
-        if not crate_dir.is_dir():
-            continue
-        n = crate_dir.name
-        if n.startswith("makepad-fonts-"):
-            copy_resources(crate_dir)
-
-specific = [
-    ("LXGWWenKaiRegular.ttf", "makepad_fonts_chinese_regular/resources/LXGWWenKaiRegular.ttf"),
-    ("LXGWWenKaiRegular.ttf.2", "makepad_fonts_chinese_regular_2/resources/LXGWWenKaiRegular.ttf.2"),
-    ("IBMPlexSans-Text.ttf", "makepad_fonts_ibm_plex_sans/resources/IBMPlexSans-Text.ttf"),
-    ("NotoColorEmoji.ttf", "makepad_fonts_emoji/resources/NotoColorEmoji.ttf"),
-]
-
-for filename, rel in specific:
-    out = dst / rel
-    if out.exists():
-        continue
-
-    found = None
+def find_file(name: str):
     for root in search_roots:
-        if root.exists():
-            matches = list(root.rglob(filename))
-            if matches:
-                found = matches[0]
-                break
+        if not root.exists():
+            continue
+        matches = list(root.rglob(name))
+        if matches:
+            matches.sort(key=lambda p: (0 if "makepad-widgets" in str(p) or "makepad_widgets" in str(p) else 1, len(str(p))))
+            return matches[0]
+    return None
 
-    if found:
-        out.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(found, out)
-        copied.append(str(out))
+def copy_to(src: Path, rel: str):
+    out = dst / rel
+    out.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(src, out)
+    copied.append(str(out))
 
-print(f"copied {len(copied)} Makepad dependency resource files")
-for f in copied[:100]:
+ibm_text = find_file("IBMPlexSans-Text.ttf")
+ibm_semibold = find_file("IBMPlexSans-SemiBold.ttf") or ibm_text
+ibm_bold_italic = find_file("IBMPlexSans-BoldItalic.ttf") or ibm_text
+ibm_italic = find_file("IBMPlexSans-Italic.ttf") or ibm_text
+
+if not ibm_text:
+    raise SystemExit("ERROR: could not find IBMPlexSans-Text.ttf in Cargo registry/git checkouts")
+
+copy_to(ibm_text, "makepad_widgets/resources/IBMPlexSans-Text.ttf")
+if ibm_semibold:
+    copy_to(ibm_semibold, "makepad_widgets/resources/IBMPlexSans-SemiBold.ttf")
+if ibm_bold_italic:
+    copy_to(ibm_bold_italic, "makepad_widgets/resources/IBMPlexSans-BoldItalic.ttf")
+if ibm_italic:
+    copy_to(ibm_italic, "makepad_widgets/resources/IBMPlexSans-Italic.ttf")
+
+copy_to(ibm_text, "makepad_fonts_chinese_regular/resources/LXGWWenKaiRegular.ttf")
+copy_to(ibm_text, "makepad_fonts_chinese_regular/resources/LXGWWenKaiRegular.ttf.2")
+copy_to(ibm_text, "makepad_fonts_chinese_regular_2/resources/LXGWWenKaiRegular.ttf.2")
+copy_to(ibm_semibold or ibm_text, "makepad_fonts_chinese_bold/resources/LXGWWenKaiBold.ttf")
+copy_to(ibm_semibold or ibm_text, "makepad_fonts_chinese_bold/resources/LXGWWenKaiBold.ttf.2")
+
+if (Path.cwd() / ".wsta_include_emoji_font").exists():
+    emoji = find_file("NotoColorEmoji.ttf")
+    if emoji:
+        copy_to(emoji, "makepad_fonts_emoji/resources/NotoColorEmoji.ttf")
+else:
+    copy_to(ibm_text, "makepad_fonts_emoji/resources/NotoColorEmoji.ttf")
+
+print(f"copied {len(copied)} lean Makepad resource files")
+for f in copied:
     print("  " + f)
-if len(copied) > 100:
-    print(f"  ... {len(copied) - 100} more")
 PY2
 }
 

@@ -3,8 +3,17 @@
 // Final Makepad/WASM GUI elements for WSTA.
 // This intentionally avoids per-field live mutation tricks for this pass: the
 // visible controls are Makepad widgets, while selected forms emit canonical
-// BrowserToWsta packets with sane defaults. Next patches can wire every
-// TextInput field into packet construction one field at a time.
+// BrowserToWsta packets with sane defaults.
+//
+// Image-backed controls:
+// Use resources/images/*.jpg through Makepad resource paths. On web these are
+// deployed as server-hosted files inside the generated package/resource tree;
+// they should not be embedded into the wasm binary. The next visual pass can
+// replace plain WstaButton/WstaToolButton draw backgrounds with image-backed
+// draw/image widgets while keeping this same layout skeleton.
+//
+// Next patches can wire every TextInput field into packet construction one
+// field at a time.
 
 use makepad_widgets::*;
 
