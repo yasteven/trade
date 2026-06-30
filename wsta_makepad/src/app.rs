@@ -353,7 +353,7 @@ impl App {
         };
         self.ui.label(id!(display_title)).set_text(cx, display);
         self.ui.label(id!(display_hint)).set_text(cx, self.form_hint());
-        self.ui.label(id!(transport_label)).set_text(cx, "transport: UI loaded / backend retrying");
+        self.ui.label(id!(transport_label)).set_text(cx, &self.transport.status_line());
         self.ui.label(id!(debug_text)).set_text(cx, &self.debug_lines.join("\n"));
     }
 
