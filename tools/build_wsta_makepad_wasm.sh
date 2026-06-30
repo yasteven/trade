@@ -34,7 +34,7 @@ def write_config(path: str):
     s = p.read_text() if p.exists() else ""
 
     section = "[target.wasm32-unknown-unknown]"
-    rustflags = 'rustflags = ["-C", "target-feature=+atomics,+bulk-memory,+mutable-globals", "-C", "link-args=--shared-memory --import-memory --max-memory=2147483648 --allow-undefined", "-C", "link-arg=--export=__stack_pointer"]'
+    rustflags = 'rustflags = ["-C", "link-args=--allow-undefined", "-C", "link-arg=--export=__stack_pointer"]'
 
     out = []
     lines = s.splitlines()
@@ -70,9 +70,9 @@ hard_force_makepad_wasm_rustflags() {
   local sep
   sep="$(printf '\037')"
 
-  export CARGO_ENCODED_RUSTFLAGS="-Ctarget-feature=+atomics,+bulk-memory,+mutable-globals${sep}-Clink-args=--shared-memory --import-memory --max-memory=2147483648 --allow-undefined${sep}-Clink-arg=--export=__stack_pointer"
-  export CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUSTFLAGS="-C target-feature=+atomics,+bulk-memory,+mutable-globals -C link-args=--shared-memory --import-memory --max-memory=2147483648 --allow-undefined -C link-arg=--export=__stack_pointer"
-  export RUSTFLAGS="-C target-feature=+atomics,+bulk-memory,+mutable-globals -C link-args=--shared-memory --import-memory --max-memory=2147483648 --allow-undefined -C link-arg=--export=__stack_pointer"
+  export CARGO_ENCODED_RUSTFLAGS="-Clink-args=--allow-undefined${sep}-Clink-arg=--export=__stack_pointer"
+  export CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUSTFLAGS="-C link-args=--allow-undefined -C link-arg=--export=__stack_pointer"
+  export RUSTFLAGS="-C link-args=--allow-undefined -C link-arg=--export=__stack_pointer"
 
   echo "CARGO_ENCODED_RUSTFLAGS is set for Makepad WASM link"
   echo "CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUSTFLAGS=${CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUSTFLAGS}"
@@ -189,8 +189,8 @@ find_makepad_package_dir() {
 copy_makepad_dependency_resources() {
   local dst_pkg="$1"
 
-  echo "== deploying Latin-only Makepad dependency resources =="
-  echo "No Chinese or emoji TTFs are copied."
+  echo "== deploying lean Makepad dependency resources =="
+  echo "Chinese/emoji URL paths are satisfied by small IBM Plex fallback TTFs, not huge glyph payloads."
 
   python - "$dst_pkg" <<'PY2'
 from pathlib import Path
@@ -221,31 +221,30 @@ def copy_to(src: Path, rel: str):
     shutil.copy2(src, out)
     copied.append(str(out))
 
-for name in [
-    "IBMPlexSans-Text.ttf",
-    "IBMPlexSans-SemiBold.ttf",
-    "IBMPlexSans-BoldItalic.ttf",
-    "IBMPlexSans-Italic.ttf",
-]:
-    found = find_file(name)
-    if found:
-        copy_to(found, f"makepad_widgets/resources/{name}")
+ibm_text = find_file("IBMPlexSans-Text.ttf")
+ibm_semibold = find_file("IBMPlexSans-SemiBold.ttf") or ibm_text
+ibm_bold_italic = find_file("IBMPlexSans-BoldItalic.ttf") or ibm_text
+ibm_italic = find_file("IBMPlexSans-Italic.ttf") or ibm_text
 
-if not copied:
-    raise SystemExit("ERROR: no IBM Plex Makepad widget fonts were found")
+if not ibm_text:
+    raise SystemExit("ERROR: could not find IBMPlexSans-Text.ttf in Cargo registry/git checkouts")
 
-for bad in [
-    "makepad_fonts_chinese_regular",
-    "makepad_fonts_chinese_regular_2",
-    "makepad_fonts_chinese_bold",
-    "makepad_fonts_chinese_bold_2",
-    "makepad_fonts_emoji",
-]:
-    target = dst / bad
-    if target.exists():
-        shutil.rmtree(target)
+copy_to(ibm_text, "makepad_widgets/resources/IBMPlexSans-Text.ttf")
+if ibm_semibold:
+    copy_to(ibm_semibold, "makepad_widgets/resources/IBMPlexSans-SemiBold.ttf")
+if ibm_bold_italic:
+    copy_to(ibm_bold_italic, "makepad_widgets/resources/IBMPlexSans-BoldItalic.ttf")
+if ibm_italic:
+    copy_to(ibm_italic, "makepad_widgets/resources/IBMPlexSans-Italic.ttf")
 
-print(f"copied {len(copied)} Latin Makepad resource files")
+copy_to(ibm_text, "makepad_fonts_chinese_regular/resources/LXGWWenKaiRegular.ttf")
+copy_to(ibm_text, "makepad_fonts_chinese_regular/resources/LXGWWenKaiRegular.ttf.2")
+copy_to(ibm_text, "makepad_fonts_chinese_regular_2/resources/LXGWWenKaiRegular.ttf.2")
+copy_to(ibm_semibold or ibm_text, "makepad_fonts_chinese_bold/resources/LXGWWenKaiBold.ttf")
+copy_to(ibm_semibold or ibm_text, "makepad_fonts_chinese_bold/resources/LXGWWenKaiBold.ttf.2")
+copy_to(ibm_text, "makepad_fonts_emoji/resources/NotoColorEmoji.ttf")
+
+print(f"copied {len(copied)} lean Makepad resource files")
 for f in copied:
     print("  " + f)
 PY2
@@ -380,72 +379,6 @@ p.write_text(s)
 PY2
 }
 
-patch_makepad_loader_to_ignore_optional_fonts() {
-  local dst_pkg="$1"
-  local web_js="$dst_pkg/makepad_platform/web.js"
-
-  if [[ ! -f "$web_js" ]]; then
-    echo "WARNING: no makepad_platform/web.js found to patch optional font loading."
-    return
-  fi
-
-  echo "== patching Makepad web.js to ignore optional Chinese/emoji font deps =="
-
-  python - "$web_js" <<'PY2'
-from pathlib import Path
-import re
-import sys
-
-p = Path(sys.argv[1])
-s = p.read_text()
-
-if "WSTA_SKIP_OPTIONAL_FONT_DEPS_V3" in s:
-    print("web.js optional font skip already patched")
-    raise SystemExit(0)
-
-skip_body = (
-    "\n        // WSTA_SKIP_OPTIONAL_FONT_DEPS_V3\n"
-    "        if (typeof path === 'string' && (\n"
-    "            path.indexOf('makepad_fonts_chinese_') !== -1 ||\n"
-    "            path.indexOf('makepad_fonts_emoji/') !== -1\n"
-    "        )) {\n"
-    "            console.warn('[WSTA] skipping optional Makepad font dependency', path);\n"
-    "            return new Uint8Array();\n"
-    "        }\n"
-)
-
-patterns = [
-    r"(?P<sig>async\s+fetch_path\s*\([^)]*\))\s*\{",
-    r"(?P<sig>fetch_path\s*\([^)]*\))\s*\{",
-    r"(?P<sig>async\s+function\s+fetch_path\s*\([^)]*\))\s*\{",
-    r"(?P<sig>function\s+fetch_path\s*\([^)]*\))\s*\{",
-]
-
-patched = None
-used = None
-
-for pattern in patterns:
-    m = re.search(pattern, s)
-    if m:
-        patched = s[:m.start()] + m.group("sig") + " {" + skip_body + s[m.end():]
-        used = pattern
-        break
-
-if patched is None:
-    print("ERROR: could not find fetch_path signature in", p)
-    print("Nearby fetch_path occurrences:")
-    for m in re.finditer("fetch_path", s):
-        a = max(0, m.start() - 220)
-        b = min(len(s), m.end() + 320)
-        print("-----")
-        print(s[a:b])
-    raise SystemExit(1)
-
-p.write_text(patched)
-print("patched web.js fetch_path using pattern:", used)
-PY2
-}
-
 deploy_makepad_package() {
   local src_pkg
   local dst_pkg
@@ -477,7 +410,6 @@ deploy_makepad_package() {
   fi
 
   copy_makepad_dependency_resources "$dst_pkg"
-  patch_makepad_loader_to_ignore_optional_fonts "$dst_pkg"
   inject_wsta_browser_profile_probe "$dst_pkg"
 
   if [[ ! -f "$dst_pkg/index.html" ]]; then
