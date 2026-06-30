@@ -72,8 +72,9 @@ hard_force_makepad_wasm_rustflags() {
 
   export CARGO_ENCODED_RUSTFLAGS="-Clink-args=--allow-undefined${sep}-Clink-arg=--export=__stack_pointer"
   export CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUSTFLAGS="-C link-args=--allow-undefined -C link-arg=--export=__stack_pointer"
-  export RUSTFLAGS="-C link-args=--allow-undefined -C link-arg=--export=__stack_pointer"
+  export RUSTFLAGS="${CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUSTFLAGS}"
 
+  echo "building stable non-threaded Makepad WASM"
   echo "CARGO_ENCODED_RUSTFLAGS is set for Makepad WASM link"
   echo "CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUSTFLAGS=${CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUSTFLAGS}"
   echo "RUSTFLAGS=${RUSTFLAGS}"
@@ -379,6 +380,52 @@ p.write_text(s)
 PY2
 }
 
+
+verify_makepad_wasm_thread_exports() {
+  local wasm="$1"
+
+  return 0
+
+  # disabled in stable non-threaded helper
+
+  echo "== verifying threaded Makepad WASM exports =="
+
+  if ! command -v wasm-objdump >/dev/null 2>&1; then
+    echo "ERROR: wasm-objdump is required to verify threaded wasm exports."
+    echo "Install wabt, for example:"
+    echo "  sudo apt-get update && sudo apt-get install -y wabt"
+    exit 1
+  fi
+
+  local exports
+  exports="$(wasm-objdump -x "$wasm" || true)"
+
+  local missing=0
+  for sym in \
+    "__stack_pointer" \
+    "__wasm_init_tls" \
+    "__tls_size" \
+    "__tls_align" \
+    "__tls_base" \
+    "wasm_thread_alloc_tls_and_stack" \
+    "wasm_thread_entrypoint" \
+    "wasm_thread_timer_entrypoint"
+  do
+    if ! grep -q "$sym" <<<"$exports"; then
+      echo "ERROR: threaded wasm export missing: $sym"
+      missing=1
+    else
+      echo "ok: $sym"
+    fi
+  done
+
+  if [[ "$missing" != "0" ]]; then
+    echo
+    echo "Threaded Makepad WASM build is incomplete. Refusing to deploy broken threaded wasm."
+    exit 1
+  fi
+}
+
 deploy_makepad_package() {
   local src_pkg
   local dst_pkg
@@ -410,6 +457,7 @@ deploy_makepad_package() {
   fi
 
   copy_makepad_dependency_resources "$dst_pkg"
+  verify_makepad_wasm_thread_exports "$dst_pkg/wsta_makepad.wasm"
   inject_wsta_browser_profile_probe "$dst_pkg"
 
   if [[ ! -f "$dst_pkg/index.html" ]]; then

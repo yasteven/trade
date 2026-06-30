@@ -119,6 +119,49 @@ append_crate_rs() {
             echo
         } >> "$crate_out"
     done
+
+    # The Makepad/WASM frontend is controlled by root-level tool scripts.
+    # Keep those scripts in the wasm crate source dump so the build/runtime
+    # contract is visible next to the wsta_makepad Rust code.
+    if [[ "$crate_dir" == "./wsta_makepad" ]]; then
+        {
+            echo
+            echo "================================================================"
+            echo "WSTA MAKEPAD WASM TOOL SCRIPTS"
+            echo "NOTE: root-level scripts included in src_wsta_makepad_rs.txt"
+            echo "================================================================"
+            echo
+        } >> "$crate_out"
+
+        for tool_file in \
+            ./tools/build_wsta_makepad_wasm.sh \
+            ./tools/build_wsta_makepad_wasm_threaded.sh \
+            ./tools/run_wsta_dev.sh \
+            ./tools/run_wsta_dev_threaded.sh
+        do
+            if [[ -f "$tool_file" ]]; then
+                {
+                    echo
+                    echo "////////////////////////////////////////////////////////////////"
+                    echo "// FILE: $tool_file"
+                    echo "////////////////////////////////////////////////////////////////"
+                    echo
+                    cat "$tool_file"
+                    echo
+                } >> "$crate_out"
+            else
+                {
+                    echo
+                    echo "////////////////////////////////////////////////////////////////"
+                    echo "// FILE: $tool_file"
+                    echo "// NOTE: missing"
+                    echo "////////////////////////////////////////////////////////////////"
+                    echo
+                } >> "$crate_out"
+            fi
+        done
+    fi
+
     {
         echo
         echo "################################################################"
@@ -140,7 +183,7 @@ append_file "$ALL_OUT" "./.gitignore" "GITIGNORE"
 append_file "$ALL_TOML_OUT" "./Cargo.toml" "WORKSPACE CARGO TOML"
 
 echo "== collecting selected directories into aggregate =="
-for dir in ./dsta ./ttrs ./usta ./vsta ./wsta ./wsta_makepad; do
+for dir in ./dsta ./ttrs ./usta ./vsta ./wsta ./wsta_makepad ./tools; do
     append_tree_files "$ALL_OUT" "$dir" "$dir"
 done
 
